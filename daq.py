@@ -16,8 +16,9 @@ class Card:
 		self.info.ModuleIndex = 0
 		self.ao= bdaqctrl.AdxInstantAoCtrlCreate()
 		assert bdaqctrl.Success == bdaqctrl.InstantAoCtrl_setSelectedDevice(self.ao, self.info)
+		self.ao_channels = bdaqctrl.InstantAoCtrl_getChannels(self.ao)
 		self.ai=bdaqctrl.AdxInstantAiCtrlCreate()
-		assert bdaqctrl.Success == bdaqctrl.InstantAiCtrl_setSelectedDevice(self.ao, self.info)
+		assert bdaqctrl.Success == bdaqctrl.InstantAiCtrl_setSelectedDevice(self.ai, self.info)
 
 	@property
 	def ao_channel_count(self):
