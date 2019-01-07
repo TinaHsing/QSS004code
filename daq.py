@@ -25,7 +25,7 @@ class Card:
 		return bdaqctrl.InstantAoCtrl_getChannelCount(self.ao)
 
 	def setAoRange(self, channel_id, mode):
-		channel = bdaqctrl.ICollection_getItem(self.channels, channel_id)
+		channel = bdaqctrl.ICollection_getItem(self.ao_channels, channel_id)
 		assert bdaqctrl.Success == bdaqctrl.AnalogChannel_setValueRange(channel, mode)
 
 	def writeAoValue(self, channel_id, value):
