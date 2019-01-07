@@ -14,12 +14,10 @@ class Card:
 		self.info.DeviceNumber = -1
 		self.info.DeviceMode = bdaqctrl.ModeWriteWithReset
 		self.info.ModuleIndex = 0
-
-        self.ao= bdaqctrl.AdxInstantAoCtrlCreate()
-        assert bdaqctrl.Success == bdaqctrl.InstantAoCtrl_setSelectedDevice(self.ao, self.info)
-        
-        self.ai=bdaqctrl.AdxInstantAiCtrlCreate()
-        assert bdaqctrl.Success == bdaqctrl.InstantAiCtrl_setSelectedDevice(self.ao, self.info)
+		self.ao= bdaqctrl.AdxInstantAoCtrlCreate()
+		assert bdaqctrl.Success == bdaqctrl.InstantAoCtrl_setSelectedDevice(self.ao, self.info)
+		self.ai=bdaqctrl.AdxInstantAiCtrlCreate()
+		assert bdaqctrl.Success == bdaqctrl.InstantAiCtrl_setSelectedDevice(self.ao, self.info)
 
     @property
     def ao_channel_count(self):
