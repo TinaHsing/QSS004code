@@ -4,7 +4,7 @@ ffi = FFI()
 with open("_bdaqctrl.h") as fin:
 	ffi.cdef(fin.read())
 
-badqctrl = ffi.dlopen("libbiodaq.so")
+bdaqctrl = ffi.dlopen("libbiodaq.so")
 
 
 class Card:
