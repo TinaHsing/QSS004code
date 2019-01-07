@@ -56,7 +56,8 @@ class Card:
 		return self.buffer[0]
 
 	def enableCounter(self, enstate):
-		assert bdaqctrl.Success == bdaqctrl.FreqMeterCtrl_setEnabled(self.fc, enstate)
+		bdaqctrl.FreqMeterCtrl_setEnabled(self.fc, enstate)
+		ssert bdaqctrl.Success == bdaqctrl.FreqMeterCtrl_setEnabled(self.fc, enstate)
 	
 	def readFreq(self):
 		return bdaqctrl.FreqMeterCtrl_getValue(self.fc)
@@ -73,6 +74,7 @@ if __name__ == "__main__":
 	print (daqcard.readAiValue(0))
 	daqcard.writeAoValue(0, 0.5)
 	daqcard.writeAoValue(1, 0.3)
+	daqcard.readAiValue(0)
 	daqcard.enableCounter(True)
 	daqcard.readFreq()
 	daqcard.enableCounter(False)
