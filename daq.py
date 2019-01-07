@@ -57,7 +57,7 @@ class Card:
 
 	def enableCounter(self, enstate):
 		bdaqctrl.FreqMeterCtrl_setEnabled(self.fc, enstate)
-		ssert bdaqctrl.Success == bdaqctrl.FreqMeterCtrl_setEnabled(self.fc, enstate)
+		assert bdaqctrl.Success == bdaqctrl.FreqMeterCtrl_setEnabled(self.fc, enstate)
 	
 	def readFreq(self):
 		return bdaqctrl.FreqMeterCtrl_getValue(self.fc)
