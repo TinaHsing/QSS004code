@@ -20,21 +20,15 @@ class Card:
 		assert bdaqctrl.Success == bdaqctrl.InstantAiCtrl_setSelectedDevice(self.ao, self.info)
 
 	@property
-    def ao_channel_count(self):
-    	return bdaqctrl.InstantAoCtrl_getChannelCount(self.ao)
+	def ao_channel_count(self):
+		return bdaqctrl.InstantAoCtrl_getChannelCount(self.ao)
 
-    def setAoRange(self, channel_id, mode):
-    	channel = bdaqctrl.ICollection_getItem(self.channels, channel_id) 	
-    	assert bdaqctrl.Success == bdaqctrl.AnalogChannel_setValueRange(channel, mode)
+	def setAoRange(self, channel_id, mode):
+		channel = bdaqctrl.ICollection_getItem(self.channels, channel_id)
+		assert bdaqctrl.Success == bdaqctrl.AnalogChannel_setValueRange(channel, mode)
 
-    def writeAoValue(self, channel_id, value):
-    	assert bdaqctrl.Success == bdaqctrl.InstantAoCtrl_WriteAny(
-            self.ao,
-            channel_id,
-            1,
-            ffi.NULL,
-            ffi.new("double *", value),
-        )
+	def writeAoValue(self, channel_id, value):
+		assert bdaqctrl.Success == bdaqctrl.InstantAoCtrl_WriteAny(self.ao,channel_id,1,ffi.NULL,ffi.new("double *", value))
 
 if __name__ == "__main__":
 
