@@ -76,7 +76,7 @@ if __name__ == "__main__":
 	daqcard.writeAoValue(1, 0.3)
 	daqcard.readAiValue(0)
 	daqcard.enableCounter(True)
-	daqcard.readFreq()
+	print (daqcard.readFreq())
 	daqcard.enableCounter(False)
 
 
