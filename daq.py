@@ -33,10 +33,10 @@ class Card:
 if __name__ == "__main__":
 
 	daqcard = Card("PCM-3810,BID#0")
-	print "channel count ="
-	print daqcard.ao_channel_count
+	print ("channel count =")
+	print (daqcard.ao_channel_count)
 	daqcard.setAoRange(0,bdaqctrl.V_0To10)
-	print "set Ao Range sucess!"
+	print ("set Ao Range sucess!")
 	daqcard.writeAoValue(0, 0.5)
 
 
