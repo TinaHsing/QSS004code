@@ -19,7 +19,7 @@ class Card:
 		self.ai=bdaqctrl.AdxInstantAiCtrlCreate()
 		assert bdaqctrl.Success == bdaqctrl.InstantAiCtrl_setSelectedDevice(self.ao, self.info)
 
-    @property
+	@property
     def ao_channel_count(self):
     	return bdaqctrl.InstantAoCtrl_getChannelCount(self.ao)
 
