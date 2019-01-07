@@ -11,9 +11,9 @@ class Card:
 	def __init__(self, dev_info):
 		self.info = ffi.new("DeviceInformation *")
 		self.info.Description = dev_info
-        self.info.DeviceNumber = -1
-        self.info.DeviceMode = bdaqctrl.ModeWriteWithReset
-        self.info.ModuleIndex = 0
+		self.info.DeviceNumber = -1
+		self.info.DeviceMode = bdaqctrl.ModeWriteWithReset
+		self.info.ModuleIndex = 0
 
         self.ao= bdaqctrl.AdxInstantAoCtrlCreate()
         assert bdaqctrl.Success == bdaqctrl.InstantAoCtrl_setSelectedDevice(self.ao, self.info)
