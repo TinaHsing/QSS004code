@@ -188,8 +188,8 @@ class mainWindow(QWidget):
         self.Fan_Control = Fan_Control_Group()
         self.Signal_Read = Signal_Read_Group()
         self.plot = outputPlot()
-        self.card = daq.Card()
-        self.I2C = smbus.SMBus(0)
+        #self.card = daq.Card()
+        #self.I2C = smbus.SMBus(0)
 
         self.SettingData = [0, 0, 0, 0, 0, 0, 0]
         if os.path.exists(SETTING_FILENAME):
@@ -259,16 +259,16 @@ class mainWindow(QWidget):
             self.Vout2 = float(self.Vout1) * DAC_Constant
             #OutStr = str(i) + " : " + str(self.Vout1) + " , " + str(self.Vout2)
             #print(OutStr)
-            self.card.writeAoValue(0, self.Vout2)
+            #self.card.writeAoValue(0, self.Vout2)
             self.HVScan.text2.setText(str(self.Vout1))
             self.HVScan.text2.show()
             #Signal_Read
-            SR_read = self.card.readAiValue(0)
+            #SR_read = self.card.readAiValue(0)
             #print(SR_read)
-            self.Signal_Read.text.setText(str(SR_read))
+            #self.Signal_Read.text.setText(str(SR_read))
             self.Signal_Read.text.show()
             #plot
-            self.data.append(SR_read)
+            #self.data.append(SR_read)
             self.plot.ax.clear()
             if ( i % 50 == 0 ):
                 self.plot.ax.plot(self.data, '-')
@@ -311,14 +311,14 @@ class mainWindow(QWidget):
         self.HVScanFlag = False
         self.HVScan.text2.setText("0")
         self.FanSpeedFlag = False
-        self.card.enableCounter(False)
+        #self.card.enableCounter(False)
 
 #DC_Voltage
     def SetDC1(self):
         self.DC1_value = self.DC_Voltage.DC_Voltage1.spin.value()
         DC1_value_out = self.DC1_value * DAC_Constant
         #print(DC1_value_out)
-        self.card.writeAoValue(1, DC1_value_out)
+        #self.card.writeAoValue(1, DC1_value_out)
 
     def SetDC2(self):
         self.DC2_value = self.DC_Voltage.DC_Voltage2.spin.value()
@@ -327,14 +327,14 @@ class mainWindow(QWidget):
         DC2_H = int(DC2_value_out / 256)
         #OutStr = str(DC2_value_out) + " , " + str(DC2_H) + " , " + str(DC2_L)
         #print(OutStr)
-        self.I2C.write_byte_data(0x60, DC2_H, DC2_L)
+        #self.I2C.write_byte_data(0x60, DC2_H, DC2_L)
 
 #Fan_Control
     def FanSpeedOut(self):
         while (self.FanSpeedFlag == True):
-            FS_read = self.card.readFreq()
-            print(FS_read)
-            self.Fan_Control.text2.setText(str(FS_read))
+            #FS_read = self.card.readFreq()
+            #print(FS_read)
+            #self.Fan_Control.text2.setText(str(FS_read))
             self.Fan_Control.text2.show()
             time.sleep(1)
 
@@ -344,9 +344,9 @@ class mainWindow(QWidget):
         FS_H = int(self.FS_value / 256)
         #OutStr = str(FS_value) + " , " + str(FS_H) + " , " + str(FS_L)
         #print(OutStr)
-        self.I2C.write_byte_data(0x61, FS_H, FS_L)
+        #self.I2C.write_byte_data(0x61, FS_H, FS_L)
         self.FanSpeedFlag = True
-        self.card.enableCounter(True)
+        #self.card.enableCounter(True)
         gt2 = threading.Thread(target = self.FanSpeedOut)
         gt2.start()
 
