@@ -8,8 +8,8 @@ from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as Navigatio
 from matplotlib.figure import Figure
 import threading
 import time
-#import daq
-#import smbus
+import daq
+import smbus
 
 StartVoltage_MIN = 0
 StartVoltage_MAX = 1000
