@@ -23,7 +23,7 @@ Loop_MAX = 1000
 TimeDelay_MIN = 10
 TimeDelay_MAX = 500
 
-DAC_Constant_S5 = float(6.0/5000.0)
+DAC_Constant_S5 = 6.0/5000.0
 
 DC_Voltage1_MIN = 500
 DC_Voltage1_MAX = 2000
@@ -36,6 +36,13 @@ Fan_Speed_MAX = 5000
 
 SETTING_FILENAME = "set/setting.txt"
 DEFAULT_FILENAME = "Signal_Read_Out.txt"
+
+I2C_DAC1_ADDRESS = 0x60
+I2C_DAC1_ADDRESS = 0x61
+EEPROM_WITH_Normal =0x60
+EEPROM_WITH_PD = 0x66
+I2CDAC_CONV_CONST = 4095.0/5.0
+
 
 class adjustBlock():
     def __init__(self, name, minValue, maxValue):
@@ -110,7 +117,7 @@ class HVScan_Group(QTabWidget):
 class DC_Voltage_Group(QTabWidget):
     def __init__(self, parent=None):
         super(DC_Voltage_Group, self).__init__(parent)
-        self.GroupBox = QGroupBox("DC Voltage Group")
+        self.GroupBox = QGroupBox("DC Voltage Control")
         self.DC_Voltage1 = adjustBlock("DC Voltage1 (V)", DC_Voltage1_MIN, DC_Voltage1_MAX)
         self.DC1_Label1 = QLabel("DC Vout1 =")
         self.DC1_Label2 = QLabel("0")
@@ -140,7 +147,7 @@ class DC_Voltage_Group(QTabWidget):
 class Fan_Control_Group(QTabWidget):
     def __init__(self, parent=None):
         super(Fan_Control_Group, self).__init__(parent)
-        self.GroupBox = QGroupBox("Fan Control Group")
+        self.GroupBox = QGroupBox("Fan Control")
         self.Fan_Speed = adjustBlock("Fan Speed Setting (mV)", Fan_Speed_MIN, Fan_Speed_MAX)
         self.text1 = QLabel("Fan Speed = ")
         self.text2 = QLabel("0")
@@ -183,6 +190,30 @@ class Signal_Read_Group(QTabWidget):
         self.GroupBox.setLayout(layout)
         self.GroupBox.show()
         return self.GroupBox
+class i2cDac:
+    def __init__(self, bus):
+        self.i2cbus=smbus.SMBus(bus) # in this case use SMBus(0)
+
+    def DacInit(self, address):
+        self.i2cbus.write_byte_data(address)
+        self.i2cbus.write_byte_data(EEPROM_WITH_Normal)
+        self.i2cbus.write_byte_data(0)
+        self.i2cbus.write_byte_data(0)
+    def DacSet(self, address, value):
+        dacout = int(value*I2CDAC_CONV_CONST)
+        out = dacout.to_bytes(2, byteorder ="big")
+        self.i2cbus.write_byte_data(address)
+        self.i2cbus.write_byte_data(out[0])
+        self.i2cbus.write_byte_data(out[1])
+    def DacClose(self, address):
+         self.i2cbus.write_byte_data(address)
+         self.i2cbus.write_byte_data(EEPROM_WITH_PD)
+         self.i2cbus.write_byte_data(0)
+         self.i2cbus.write_byte_data(0)
+        
+
+
+    
 
 
 class mainWindow(QWidget):
@@ -197,46 +228,29 @@ class mainWindow(QWidget):
         self.Signal_Read = Signal_Read_Group()
         self.plot = outputPlot()
         self.card = daq.Card()
-        self.I2C = smbus.SMBus(0)
+        self.I2C = i2cDac(0)
+        self.SettingData = loadPreset.Load()
 
-        self.SettingData = [0, 0, 0, 0, 0, 0, 0]
-        if os.path.exists(SETTING_FILENAME):
-            self.SettingData = [line.rstrip('\n') for line in open(SETTING_FILENAME)]
+        #self.SettingData = [0, 0, 0, 0, 0, 0, 0]
+        #if os.path.exists(SETTING_FILENAME):
+            #self.SettingData = [line.rstrip('\n') for line in open(SETTING_FILENAME)]
         #print(self.SettingData)
 
         #HVScan
         self.HVScan.StartBtn.clicked.connect(lambda:self.StartScan())
         self.HVScan.StopBtn.clicked.connect(lambda:self.StopScan())
-        self.Vout1 = 0
-        self.Vout2 = 0.0
+        #self.Vout1 = 0
+        #self.Vout2 = 0.0
         self.HVScanFlag = False
-        self.SV_value = int(self.SettingData[0])
-        self.VS_value = int(self.SettingData[1])
-        self.Loop_value = int(self.SettingData[2])
-        self.TD_value = int(self.SettingData[3])
-        self.HVScan.StartVoltage.coarse.setValue(self.SV_value)
-        self.HVScan.StartVoltage.spin.setValue(self.SV_value)
-        self.HVScan.VoltageStep.coarse.setValue(self.VS_value)
-        self.HVScan.VoltageStep.spin.setValue(self.VS_value)
-        self.HVScan.Loop.coarse.setValue(self.Loop_value)
-        self.HVScan.Loop.spin.setValue(self.Loop_value)
-        self.HVScan.TimeDelay.coarse.setValue(self.TD_value)
-        self.HVScan.TimeDelay.spin.setValue(self.TD_value)
+
         #DC_Voltage
         self.DC_Voltage.SetDC1Btn.clicked.connect(lambda:self.SetDC1())
         self.DC_Voltage.SetDC2Btn.clicked.connect(lambda:self.SetDC2())
-        self.DC1_value = int(self.SettingData[4])
-        self.DC2_value = int(self.SettingData[5])
-        self.DC_Voltage.DC_Voltage1.coarse.setValue(self.DC1_value)
-        self.DC_Voltage.DC_Voltage1.spin.setValue(self.DC1_value)
-        self.DC_Voltage.DC_Voltage2.coarse.setValue(self.DC2_value)
-        self.DC_Voltage.DC_Voltage2.spin.setValue(self.DC2_value)
+
         #Fan_Control
         self.Fan_Control.SetBtn.clicked.connect(lambda:self.SetFanSpeed())
         self.FanSpeedFlag = False
-        self.FS_value = int(self.SettingData[6])
-        self.Fan_Control.Fan_Speed.coarse.setValue(self.FS_value)
-        self.Fan_Control.Fan_Speed.spin.setValue(self.FS_value)
+
         #Signal_Read
         self.Signal_Read.SaveBtn.clicked.connect(lambda:self.SaveData())
         self.data = []
@@ -257,6 +271,22 @@ class mainWindow(QWidget):
         mainLayout.setColumnStretch(2, 1)
         mainLayout.setColumnStretch(3, 1)
         self.setLayout(mainLayout)
+
+    def LoadPreset(self):
+        self.SettingData = [0 for i in range(0, 7)]
+        if os.path.exists(SETTING_FILENAME):
+            self.SettingData = [line.rstrip('\n') for line in open(SETTING_FILENAME)]
+
+        self.HVScan.StartVoltage.coarse.setValue( int(self.SettingData[0]))
+        self.HVScan.VoltageStep.coarse.setValue( int(self.SettingData[1]))
+        self.HVScan.Loop.coarse.setValue(int(self.SettingData[2]))
+        self.HVScan.TimeDelay.coarse.setValue(int(self.SettingData[3]))
+        self.DC_Voltage.DC_Voltage1.coarse.setValue(int(self.SettingData[4]))
+        self.DC_Voltage.DC_Voltage2.coarse.setValue(int(self.SettingData[5]))
+        self.Fan_Control.Fan_Speed.coarse.setValue(int(self.SettingData[6]))
+
+
+        
 
 #HVScan
     def VoltageOut(self):
