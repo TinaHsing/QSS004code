@@ -43,7 +43,6 @@ EEPROM_WITH_Normal =0x60
 EEPROM_WITH_PD = 0x66
 I2CDAC_CONV_CONST = 4095.0/5.0
 
-
 class adjustBlock():
     def __init__(self, name, minValue, maxValue):
         self.name = name
@@ -70,22 +69,50 @@ class adjustBlock():
         a=self.spin.value()
         self.coarse.setSliderPosition(a)
 
-
 class outputPlot(QWidget):
     def __init__(self, parent=None):
         super(outputPlot, self).__init__(parent)
         self.figure = Figure(figsize=(6,3))
         self.canvas = FigureCanvas(self.figure)
         self.toolbar = NavigationToolbar(self.canvas, self)
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        layout.addWidget(self.toolbar)
+        W=QWidget()
+        picout = QLabel(w)
+        logo = QPixmap("logo.png")
+        picout.setPixmap(logo)
+        layout = QGridLayout()
+        layout.addWidget(self.canvas,0,0,1,2)
+        layout.addWidget(self.toolbar,1,0,1,1)
+        layout.addWidget(picout,1,1,1,1)
         self.setLayout(layout)
         self.ax = self.figure.add_subplot(111)
 
+class Signal_Read_Group(QTabWidget):
+
+        super(Signal_Read_Group, self).__init__(parent)
+        self.GroupBox = QGroupBox("Signal Read")
+        self.text = QLabel("0")
+        pe = QPalette()
+        pe.setColor(QPalette.WindowText,Qt.yellow)
+        self.text.setAutoFillBackground(True)
+        pe.setColor(QPalette.Window,Qt.black)
+        #pe.setColor(QPalette.Background,Qt.black)
+        self.text.setPalette(pe)
+        self.text.setAlignment(Qt.AlignCenter)
+        self.text.setFont(QFont("",16,QFont.Bold))
+        self.SaveBtn = QPushButton("Save")
+        #self.SubBlockWidget()
+
+    def SubBlockWidget(self):
+        layout = QHBoxLayout()
+        layout.addWidget(self.text)
+        layout.addWidget(self.SaveBtn)
+        #self.setLayout(layout)
+        self.GroupBox.setLayout(layout)
+        self.GroupBox.show()
+        return self.GroupBox
 
 class HVScan_Group(QTabWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, signal_read, plot, card):
         super(HVScan_Group, self).__init__(parent)
         self.GroupBox = QGroupBox("High Voltage Scan")
         self.StartVoltage = adjustBlock("Start Voltage (V)", StartVoltage_MIN, StartVoltage_MAX)
@@ -96,7 +123,7 @@ class HVScan_Group(QTabWidget):
         self.text2 = QLabel("0")
         self.StartBtn = QPushButton("Start")
         self.StopBtn = QPushButton("Stop")
-        #self.SubBlockWidget()
+        self.HVScanFlag = False
 
     def SubBlockWidget(self):
         layout = QGridLayout()
@@ -112,7 +139,6 @@ class HVScan_Group(QTabWidget):
         self.GroupBox.setLayout(layout)
         self.GroupBox.show()
         return self.GroupBox
-
 
 class DC_Voltage_Group(QTabWidget):
     def __init__(self, parent=None):
@@ -143,7 +169,6 @@ class DC_Voltage_Group(QTabWidget):
         self.GroupBox.show()
         return self.GroupBox
 
-
 class Fan_Control_Group(QTabWidget):
     def __init__(self, parent=None):
         super(Fan_Control_Group, self).__init__(parent)
@@ -165,31 +190,6 @@ class Fan_Control_Group(QTabWidget):
         self.GroupBox.show()
         return self.GroupBox
 
-
-class Signal_Read_Group(QTabWidget):
-    def __init__(self, parent=None):
-        super(Signal_Read_Group, self).__init__(parent)
-        self.GroupBox = QGroupBox("Signal Read")
-        self.text = QLabel("0")
-        pe = QPalette()
-        pe.setColor(QPalette.WindowText,Qt.yellow)
-        self.text.setAutoFillBackground(True)
-        pe.setColor(QPalette.Window,Qt.black)
-        #pe.setColor(QPalette.Background,Qt.black)
-        self.text.setPalette(pe)
-        self.text.setAlignment(Qt.AlignCenter)
-        self.text.setFont(QFont("",16,QFont.Bold))
-        self.SaveBtn = QPushButton("Save")
-        #self.SubBlockWidget()
-
-    def SubBlockWidget(self):
-        layout = QHBoxLayout()
-        layout.addWidget(self.text)
-        layout.addWidget(self.SaveBtn)
-        #self.setLayout(layout)
-        self.GroupBox.setLayout(layout)
-        self.GroupBox.show()
-        return self.GroupBox
 class i2cDac:
     def __init__(self, bus):
         self.i2cbus=smbus.SMBus(bus) # in this case use SMBus(0)
@@ -211,11 +211,6 @@ class i2cDac:
          self.i2cbus.write_byte_data(0)
          self.i2cbus.write_byte_data(0)
         
-
-
-    
-
-
 class mainWindow(QWidget):
     def __init__(self, parent=None):
         super (mainWindow, self).__init__(parent)
@@ -229,12 +224,9 @@ class mainWindow(QWidget):
         self.plot = outputPlot()
         self.card = daq.Card()
         self.I2C = i2cDac(0)
+        self.I2C.DacInit(I2C_DAC1_ADDRESS)
+        self.I2C.DacInit(I2C_DAC2_ADDRESS)
         self.SettingData = loadPreset.Load()
-
-        #self.SettingData = [0, 0, 0, 0, 0, 0, 0]
-        #if os.path.exists(SETTING_FILENAME):
-            #self.SettingData = [line.rstrip('\n') for line in open(SETTING_FILENAME)]
-        #print(self.SettingData)
 
         #HVScan
         self.HVScan.StartBtn.clicked.connect(lambda:self.StartScan())
@@ -285,20 +277,18 @@ class mainWindow(QWidget):
         self.DC_Voltage.DC_Voltage2.coarse.setValue(int(self.SettingData[5]))
         self.Fan_Control.Fan_Speed.coarse.setValue(int(self.SettingData[6]))
 
-
-        
-
 #HVScan
     def VoltageOut(self):
-        TD_value_float = float(self.TD_value/1000.0)
+        TD_value_float = float(self.HVScan.TimeDelay.spin.value()/1000.0)
         i = 0
-        while (i < self.Loop_value) & (self.HVScanFlag == True):
-            self.Vout1 = self.SV_value + self.VS_value * i
-            self.Vout2 = float(self.Vout1) * DAC_Constant_S5
-            #OutStr = str(i) + " : " + str(self.Vout1) + " , " + str(self.Vout2)
-            #print(OutStr)
-            self.card.writeAoValue(0, self.Vout2)
-            self.HVScan.text2.setText(str(self.Vout1))
+        loopValue = self.HVScan.Loop.spin.value()
+        startValue = self.HVScan.StartVoltage.spin.value()
+        stepValue = self.HVScan.VoltageStep.spin.value()
+        while (i < loopValue) & (self.HVScanFlag == True):
+            Vout1 = startValue + stepValue * i
+            Vout2 = float(Vout1) * DAC_Constant_S5
+            self.card.writeAoValue(0, Vout2)
+            self.HVScan.text2.setText(str(Vout1))
             self.HVScan.text2.show()
             #Signal_Read
             SR_read = self.card.readAiValue(0)
@@ -307,8 +297,8 @@ class mainWindow(QWidget):
             self.Signal_Read.text.show()
             #plot
             self.data.append(SR_read)
-            self.plot.ax.clear()
             if ( i % 50 == 0 ):
+                self.plot.ax.clear()
                 self.plot.ax.plot(self.data, '-')
                 self.plot.canvas.draw()
             time.sleep(TD_value_float)
@@ -327,43 +317,30 @@ class mainWindow(QWidget):
         fo = open(SETTING_FILENAME, "w+")
         fo.writelines(SettingData)
         fo.close()
-
-        self.Vout1 = 0
-        self.Vout2 = 0.0
         self.HVScanFlag = True
         gt1 = threading.Thread(target = self.VoltageOut)
         gt1.start()
-        #plot
         self.data = []
-        self.plot.ax.clear()
-        self.plot.ax.plot(self.data, 'b-')
-        self.plot.canvas.draw()
 
     def StopScan(self):
-        self.Vout1 = 0
-        self.Vout2 = 0.0
         self.HVScanFlag = False
         self.HVScan.text2.setText("0")
+        self.card.writeAoValue(0, 0)
         self.FanSpeedFlag = False
         self.card.enableCounter(False)
 
 #DC_Voltage
     def SetDC1(self):
-        self.DC1_value = self.DC_Voltage.DC_Voltage1.spin.value()
-        DC1_value_out = self.DC1_value * DAC_Constant_S5
-        #print(DC1_value_out)
-        self.card.writeAoValue(1, DC1_value_out)
-        self.DC_Voltage.DC1_Label2.setText(str(self.DC1_value))
+        value1= self.DC_Voltage.DC_Voltage1.spin.value()
+        DC1_value_out =  value1 * DAC_Constant_S5
+        self.I2C.DacSet(I2C_DAC1_ADDRESS, DC1_value_out)
+        self.DC_Voltage.DC1_Label2.setText(str(value1))
 
     def SetDC2(self):
-        self.DC2_value = self.DC_Voltage.DC_Voltage2.spin.value()
-        DC2_value_out = int(self.DC2_value * DAC_Constant_S5 / 5 * 16383)
-        DC2_L = DC2_value_out & 0xFF
-        DC2_H = int(DC2_value_out / 256)
-        #OutStr = str(DC2_value_out) + " , " + str(DC2_H) + " , " + str(DC2_L)
-        #print(OutStr)
-        self.I2C.write_byte_data(0x60, DC2_H, DC2_L)
-        self.DC_Voltage.DC2_Label2.setText(str(self.DC2_value))
+        value2 = self.DC_Voltage.DC_Voltage2.spin.value()
+        DC2_value_out = value2 * DAC_Constant_S5
+        self.I2C.DacSet(I2C_DAC2_ADDRESS, DC2_value_out)
+        self.DC_Voltage.DC2_Label2.setText(str(value2))
 
 #Fan_Control
     def FanSpeedOut(self):
@@ -375,12 +352,8 @@ class mainWindow(QWidget):
             time.sleep(1)
 
     def SetFanSpeed(self):
-        self.FS_value = self.Fan_Control.Fan_Speed.spin.value()
-        FS_L = self.FS_value & 0xFF
-        FS_H = int(self.FS_value / 256)
-        #OutStr = str(FS_value) + " , " + str(FS_H) + " , " + str(FS_L)
-        #print(OutStr)
-        self.I2C.write_byte_data(0x61, FS_H, FS_L)
+        FS_value = float(self.Fan_Control.Fan_Speed.spin.value())/1000.0
+        self.card.writeAoValue(1, FS_value)
         self.FanSpeedFlag = True
         self.card.enableCounter(True)
         gt2 = threading.Thread(target = self.FanSpeedOut)
