@@ -35,6 +35,7 @@ DC_Voltage2_MAX = 4000
 Fan_Speed_MIN = 0
 Fan_Speed_MAX = 5000
 
+SETTING_FILEPATH = "set"
 SETTING_FILENAME = "set/setting.txt"
 DEFAULT_FILENAME = "Signal_Read_Out.txt"
 
@@ -332,6 +333,8 @@ class mainWindow(QWidget):
 		self.SettingData[6] = self.Fan_Control.Fan_Speed.spin.value()
 		#print(self.SettingData)
 		SettingData = [str(line) + '\n' for line in self.SettingData] 
+		if not os.path.isdir(SETTING_FILEPATH):
+			os.mkdir(SETTING_FILEPATH)
 		fo = open(SETTING_FILENAME, "w+")
 		fo.writelines(SettingData)
 		fo.close()
