@@ -10,6 +10,7 @@ import threading
 import time
 import paramiko
 import scipy
+from scipy.signal import find_peaks
 
 StartVoltage_MIN = 1000
 StartVoltage_MAX = 1900
@@ -35,6 +36,12 @@ DC_Voltage2_MAX = 4000
 Fan_Speed_MIN = 0
 Fan_Speed_MAX = 5000
 
+Threshold_MIN = -10*1000
+Threshold_MAX = 10*1000
+
+Noise_MIN = 0
+Noise_MAX = 1000
+
 SETTING_FILEPATH = "set"
 SETTING_FILENAME = "set/setting.txt"
 DEFAULT_FILENAME = "Signal_Read_Out.txt"
@@ -43,11 +50,17 @@ I2CDAC_CONV_CONST = 4095.0/5.0
 
 VERSION = "IonMobilityR V1.00"
 DAC_SCAN = 'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 1 '
-DAC_DC = 'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 2 '
-DAC_ESI = 'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 3 '
-DAC_FAN = 'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 4 '
+DAC_SCAN_READ = 'LD_LIBRARY_PATH=/opt/redpitaya/lib ./ADC_MV 0 10 1'
+DAC_SCAN_STOP = 'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 1 0'
+DAC_DC =   'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 2 '
+DAC_ESI =  'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 3 '
+DAC_FAN =  'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 4 '
 
+ConnectionStatus = False
 
+HOST_NAME = "root"
+HOST_PWD = "root"
+HOST_PORT = 22
 
 class adjustBlock():
 	def __init__(self, name, minValue, maxValue):
@@ -96,31 +109,30 @@ class outputPlot(QWidget):
 		self.ax.set_ylabel("Voltage Output (V)")
 
 class Signal_Read_Group(QTabWidget):
-        def __init__(self, parent=None):
-                super(Signal_Read_Group, self).__init__(parent)
-                self.GroupBox = QGroupBox("Signal Read")
-                self.text = QLabel("0")
-                pe = QPalette()
-                pe.setColor(QPalette.WindowText,Qt.yellow)
-                self.text.setAutoFillBackground(True)
-                pe.setColor(QPalette.Window,Qt.black)
+    def __init__(self, parent=None):
+        super(Signal_Read_Group, self).__init__(parent)
+        self.GroupBox = QGroupBox("Signal Read")
+        self.text = QLabel("0")
+        pe = QPalette()
+        pe.setColor(QPalette.WindowText,Qt.yellow)
+        self.text.setAutoFillBackground(True)
+        pe.setColor(QPalette.Window,Qt.black)
 		#pe.setColor(QPalette.Background,Qt.black)
-                self.text.setPalette(pe)
-                self.text.setAlignment(Qt.AlignCenter)
-                self.text.setFont(QFont("",16,QFont.Bold))
-                self.SaveBtn = QPushButton("Save")
-                self.ExitBtn = QPushButton("Exit")
+        self.text.setPalette(pe)
+        self.text.setAlignment(Qt.AlignCenter)
+        self.text.setFont(QFont("",16,QFont.Bold))
+        self.SaveBtn = QPushButton("Save")
 		#self.SubBlockWidget()
+        self.SaveBtn.setEnabled(False)
 
-        def SubBlockWidget(self):
-                layout = QGridLayout()
-                layout.addWidget(self.text,0,0,2,1)
-                layout.addWidget(self.SaveBtn,0,1,1,1)
-                layout.addWidget(self.ExitBtn,1,1,1,1)
+    def SubBlockWidget(self):
+        layout = QGridLayout()
+        layout.addWidget(self.text,0,0,1,2)
+        layout.addWidget(self.SaveBtn,1,1,1,1)
 		#self.setLayout(layout)
-                self.GroupBox.setLayout(layout)
-                self.GroupBox.show()
-                return self.GroupBox
+        self.GroupBox.setLayout(layout)
+        self.GroupBox.show()
+        return self.GroupBox
 
 class HVScan_Group(QTabWidget):
 	def __init__(self, parent=None):
@@ -135,6 +147,8 @@ class HVScan_Group(QTabWidget):
 		self.StartBtn = QPushButton("Start")
 		self.StopBtn = QPushButton("Stop")
 		self.HVScanFlag = False
+		self.StartBtn.setEnabled(False)
+		self.StopBtn.setEnabled(False)
 
 	def SubBlockWidget(self):
 		layout = QGridLayout()
@@ -146,6 +160,28 @@ class HVScan_Group(QTabWidget):
 		layout.addWidget(self.text2,2,1,1,1)
 		layout.addWidget(self.StartBtn,2,2,1,1)
 		layout.addWidget(self.StopBtn,2,3,1,1)
+		#self.setLayout(layout)
+		self.GroupBox.setLayout(layout)
+		self.GroupBox.show()
+		return self.GroupBox
+
+class Data_Analysis_Group(QTabWidget):
+	def __init__(self, parent=None):
+		super(Data_Analysis_Group, self).__init__(parent)
+		self.GroupBox = QGroupBox("Data Analysis")
+		self.Threshold = adjustBlock("Threshold (mV)", Threshold_MIN, Threshold_MAX)
+		self.Noise = adjustBlock("Noise (mV)", Noise_MIN, Noise_MAX)
+		self.LoadBtn = QPushButton("Load")
+		self.AnalyBtn = QPushButton("Analysis")
+		#self.LoadBtn.setEnabled(False)
+		self.AnalyBtn.setEnabled(False)
+
+	def SubBlockWidget(self):
+		layout = QGridLayout()
+		layout.addWidget(self.Threshold.adjBlockWidget(),0,0,1,2)
+		layout.addWidget(self.Noise.adjBlockWidget(),1,0,1,2)
+		layout.addWidget(self.LoadBtn,2,0,1,1)
+		layout.addWidget(self.AnalyBtn,2,1,1,1)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
@@ -164,6 +200,8 @@ class DC_Voltage_Group(QTabWidget):
 		self.DC2_Label1 = QLabel("ESI =")
 		self.DC2_Label2 = QLabel("0")
 		#self.SubBlockWidget()
+		self.SetDC1Btn.setEnabled(False)
+		self.SetDC2Btn.setEnabled(False)
 
 	def SubBlockWidget(self):
 		layout = QGridLayout()
@@ -188,7 +226,7 @@ class Fan_Control_Group(QTabWidget):
 		self.text1 = QLabel("Fan Speed = ")
 		self.text2 = QLabel("0")
 		self.SetBtn = QPushButton("Set")
-
+		self.SetBtn.setEnabled(False)
 
 	def SubBlockWidget(self):
 		layout = QGridLayout()
@@ -224,34 +262,6 @@ class connectBlock():
         return self.connectGroupBox
     
 
-    def buildConnect(self):
-        global ConnectionStatus
-        self.host = "rp-"+str(self.connectIP.text())+".local"
-        try:
-            self.ssh.connect(self.host, HOST_PORT, HOST_NAME, HOST_PWD)
-        except:
-            self.connectStatus.setText("SSH connection failed")
-            self.connectStatus.show()
-        else:
-            stdin, stdout, stderr = self.ssh.exec_command('cat /opt/redpitaya/fpga/red_pitaya_top_v2.bit > /dev/xdevcfg')
-            stdin, stdout, stderr = self.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 1 0')
-            stdin, stdout, stderr = self.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 2 0')
-            stdin, stdout, stderr = self.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 3 0')
-            stdin, stdout, stderr = self.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 4 0')
-            stdin, stdout, stderr = self.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 5 0')
-            stdin, stdout, stderr = self.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 6 0')
-            stdin, stdout, stderr = self.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 7 0')
-            stdin, stdout, stderr = self.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 8 0')
-            stdin, stdout, stderr = self.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 9 0')
-            stdin, stdout, stderr = self.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 10 0')
-            pe = QPalette()
-            pe.setColor(QPalette.WindowText,Qt.black)
-            self.connectStatus.setPalette(pe)
-            self.connectStatus.setText("Connection build")
-            self.connectStatus.show()
-            ConnectionStatus = True
-
-		
 class mainWindow(QMainWindow):
 	def __init__(self, parent=None):
 		super (mainWindow, self).__init__(parent)
@@ -263,15 +273,18 @@ class mainWindow(QMainWindow):
 		self.DC_Voltage = DC_Voltage_Group()
 		self.Fan_Control = Fan_Control_Group()
 		self.Signal_Read = Signal_Read_Group()
+		self.Data_Analysis = Data_Analysis_Group()
 		self.plot = outputPlot()
-		self.SettingData = [0 for i in range(0, 7)]
+		self.SettingData = [0 for i in range(0, 8)]
 		self.LoadPreset()
-		menu_about = QAction("&About", self)
-		menu_about.triggered.connect(self.aboutBox)
+		#menu_about = QAction("&About", self)
+		#menu_about.triggered.connect(self.aboutBox)
 		mainMenu = self.menuBar()
-		mainMenu.addMenu("&About")
-		mainMenu.addAction(menu_about)
+		mainMenu.addMenu("About")
+		#mainMenu.addAction(menu_about)
 
+		#connect
+		self.ip.connectBtn.clicked.connect(lambda:self.buildConnect())
 
 		#HVScan
 		self.HVScan.StartBtn.clicked.connect(lambda:self.StartScan())
@@ -291,19 +304,24 @@ class mainWindow(QMainWindow):
 		#Signal_Read
 		self.Signal_Read.SaveBtn.clicked.connect(lambda:self.SaveData())
 		self.data = []
-		self.dv =[]
+		self.dv = []
 		self.main_UI()
 
-		# ExitProg
-		self.Signal_Read.ExitBtn.clicked.connect(lambda:self.ExitProg())
+		#Data_Analysis
+		self.Data_Analysis.LoadBtn.clicked.connect(lambda:self.LoadData())
+		self.Data_Analysis.AnalyBtn.clicked.connect(lambda:self.AnalysisData())
+
+		#ExitProg
+		#self.Signal_Read.ExitBtn.clicked.connect(lambda:self.ExitProg())
 
 	def main_UI(self):
 		mainLayout = QGridLayout()
 		mainLayout.addWidget(self.HVScan.SubBlockWidget(),0,0,2,2)
 		mainLayout.addWidget(self.DC_Voltage.SubBlockWidget(),0,2,2,1)
 		mainLayout.addWidget(self.Fan_Control.SubBlockWidget(),0,3,1,1)
-		mainLayout.addWidget(self.ip.connectBlockWidget(), 0,4, 1, 1)
+		mainLayout.addWidget(self.ip.connectBlockWidget(), 0, 4, 1, 1)
 		mainLayout.addWidget(self.Signal_Read.SubBlockWidget(),1,3,1,1)
+		mainLayout.addWidget(self.Data_Analysis.SubBlockWidget(),1,4,1,1)
 		mainLayout.addWidget(self.plot,2,0,2,5)
 		mainLayout.setRowStretch(0, 1)
 		mainLayout.setRowStretch(1, 1)
@@ -312,6 +330,7 @@ class mainWindow(QMainWindow):
 		mainLayout.setColumnStretch(1, 1)
 		mainLayout.setColumnStretch(2, 1)
 		mainLayout.setColumnStretch(3, 1)
+		mainLayout.setColumnStretch(4, 1)
 		self.setCentralWidget(QWidget(self))
 		self.centralWidget().setLayout(mainLayout)
 
@@ -320,18 +339,59 @@ class mainWindow(QMainWindow):
 
 
 	def LoadPreset(self):
-		
 		if os.path.exists(SETTING_FILENAME):
 			self.SettingData = [line.rstrip('\n') for line in open(SETTING_FILENAME)]
+		self.ip.connectIP.setText(str(self.SettingData[0]))
+		self.HVScan.StartVoltage.coarse.setValue(int(self.SettingData[1]))
+		self.HVScan.StartVoltage.spin.setValue(int(self.SettingData[1]))
+		self.HVScan.VoltageStep.coarse.setValue(int(self.SettingData[2]))
+		self.HVScan.VoltageStep.spin.setValue(int(self.SettingData[2]))
+		self.HVScan.Loop.coarse.setValue(int(self.SettingData[3]))
+		self.HVScan.Loop.spin.setValue(int(self.SettingData[3]))
+		self.HVScan.TimeDelay.coarse.setValue(int(self.SettingData[4]))
+		self.HVScan.TimeDelay.spin.setValue(int(self.SettingData[4]))
+		self.DC_Voltage.DC_Voltage1.coarse.setValue(int(self.SettingData[5]))
+		self.DC_Voltage.DC_Voltage1.spin.setValue(int(self.SettingData[5]))
+		self.DC_Voltage.DC_Voltage2.coarse.setValue(int(self.SettingData[6]))
+		self.DC_Voltage.DC_Voltage2.spin.setValue(int(self.SettingData[6]))
+		self.Fan_Control.Fan_Speed.coarse.setValue(int(self.SettingData[7]))
+		self.Fan_Control.Fan_Speed.spin.setValue(int(self.SettingData[7]))
 
-		self.HVScan.StartVoltage.coarse.setValue( int(self.SettingData[0]))
-		self.HVScan.VoltageStep.coarse.setValue( int(self.SettingData[1]))
-		self.HVScan.Loop.coarse.setValue(int(self.SettingData[2]))
-		self.HVScan.TimeDelay.coarse.setValue(int(self.SettingData[3]))
-		self.DC_Voltage.DC_Voltage1.coarse.setValue(int(self.SettingData[4]))
-		self.DC_Voltage.DC_Voltage2.coarse.setValue(int(self.SettingData[5]))
-		self.Fan_Control.Fan_Speed.coarse.setValue(int(self.SettingData[6]))
+#connect
+	def buildConnect(self):
+		global ConnectionStatus
+		self.ip.host = "rp-"+str(self.ip.connectIP.text())+".local"
+		#print self.ip.host
+		try:
+			self.ip.ssh.connect(self.ip.host, HOST_PORT, HOST_NAME, HOST_PWD)
+		except:
+			self.ip.connectStatus.setText("SSH connection failed")
+			self.ip.connectStatus.show()
+		else:
+			stdin, stdout, stderr = self.ip.ssh.exec_command('cat /opt/redpitaya/fpga/red_pitaya_top_v2.bit > /dev/xdevcfg')
+			stdin, stdout, stderr = self.ip.ssh.exec_command(DAC_SCAN_STOP)
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 2 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 3 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 4 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 5 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 6 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 7 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 8 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 9 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 10 0')
+			pe = QPalette()
+			pe.setColor(QPalette.WindowText,Qt.black)
+			self.ip.connectStatus.setPalette(pe)
+			self.ip.connectStatus.setText("Connection build")
+			self.ip.connectStatus.show()
+			ConnectionStatus = True
+        	self.HVScan.StartBtn.setEnabled(True)
+        	#self.HVScan.StopBtn.setEnabled(True)
+        	self.DC_Voltage.SetDC1Btn.setEnabled(True)
+        	self.DC_Voltage.SetDC2Btn.setEnabled(True)
+        	self.Fan_Control.SetBtn.setEnabled(True)
 
+		
 #HVScan
 	def VoltageOut(self):
 		TD_value_float = float(self.HVScan.TimeDelay.spin.value()/1000.0)
@@ -339,22 +399,26 @@ class mainWindow(QMainWindow):
 		loopValue = self.HVScan.Loop.spin.value()
 		startValue = self.HVScan.StartVoltage.spin.value()
 		stepValue = float(self.HVScan.VoltageStep.spin.value())/1000.0
-		self.data =[]
-		self.dv=[]
+		self.data = []
+		self.dv = []
 		while (i < loopValue) or (self.HVScanFlag == True):
                         if (i < loopValue) & (self.HVScanFlag == True):
                                 Vout1 = startValue + stepValue * i
                                 Vout2 = float(Vout1) * DAC_Constant_S5
                                 #self.card.writeAoValue(1, Vout2)
                                 cmd = DAC_SCAN+str(Vout2)
-                                print cmd
-                                stdin, stdout, stderr = self.ssh.exec_command(cmd)
+                                #print cmd
+                                stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
                                 self.HVScan.text2.setText(str(Vout1))
                                 self.HVScan.text2.show()
                                 time.sleep(TD_value_float)
-                                SR_read = self.card.readAiAve(0,DAC_Average_Number )
+                                #SR_read = self.card.readAiAve(0,DAC_Average_Number )
+                                stdin, stdout, stderr = self.ip.ssh.exec_command(DAC_SCAN_READ)
+                                for line in stdout:
+                                	SR_read = float(line)
+                                	#print SR_read
                                 self.data.append(SR_read)
-                                self.dv.append(i*stepValue)
+                                self.dv.append(i*stepValue+startValue)
                                 self.plot.ax.clear()
                                 self.plot.ax.plot(self.dv,self.data, '-')
                                 self.plot.canvas.draw()
@@ -363,7 +427,11 @@ class mainWindow(QMainWindow):
                                 i = i + 1
                         elif (self.HVScanFlag == True):
                                 time.sleep(TD_value_float)
-                                SR_read = self.card.readAiAve(0,DAC_Average_Number )
+                                #SR_read = self.card.readAiAve(0,DAC_Average_Number )
+                                stdin, stdout, stderr = self.ip.ssh.exec_command(DAC_SCAN_READ)
+                                for line in stdout:
+                                	SR_read = float(line)
+                                	#print SR_read
                                 self.Signal_Read.text.setText(str("%2.4f"%SR_read))
                                 self.Signal_Read.text.show()
 
@@ -372,13 +440,14 @@ class mainWindow(QMainWindow):
  
 
 	def StartScan(self):
-		self.SettingData[0] = self.HVScan.StartVoltage.spin.value()
-		self.SettingData[1] = self.HVScan.VoltageStep.spin.value()
-		self.SettingData[2] = self.HVScan.Loop.spin.value()
-		self.SettingData[3] = self.HVScan.TimeDelay.spin.value()
-		self.SettingData[4] = self.DC_Voltage.DC_Voltage1.spin.value()
-		self.SettingData[5] = self.DC_Voltage.DC_Voltage2.spin.value()
-		self.SettingData[6] = self.Fan_Control.Fan_Speed.spin.value()
+		self.SettingData[0] = self.ip.connectIP.text()
+		self.SettingData[1] = self.HVScan.StartVoltage.spin.value()
+		self.SettingData[2] = self.HVScan.VoltageStep.spin.value()
+		self.SettingData[3] = self.HVScan.Loop.spin.value()
+		self.SettingData[4] = self.HVScan.TimeDelay.spin.value()
+		self.SettingData[5] = self.DC_Voltage.DC_Voltage1.spin.value()
+		self.SettingData[6] = self.DC_Voltage.DC_Voltage2.spin.value()
+		self.SettingData[7] = self.Fan_Control.Fan_Speed.spin.value()
 		#print(self.SettingData)
 		SettingData = [str(line) + '\n' for line in self.SettingData] 
 		if not os.path.isdir(SETTING_FILEPATH):
@@ -390,44 +459,62 @@ class mainWindow(QMainWindow):
 		gt1 = threading.Thread(target = self.VoltageOut)
 		gt1.start()
 		self.data = []
+		self.HVScan.StartBtn.setEnabled(False)
+		self.HVScan.StopBtn.setEnabled(True)
 
 	def StopScan(self):
 		self.HVScanFlag = False
-		val =self.HVScan.StartVoltage.spin.value()
+		val = self.HVScan.StartVoltage.spin.value()
 		self.HVScan.text2.setText(str(val))
-		self.card.writeAoValue(0,float(val)*DAC_Constant_S5)
+		#self.card.writeAoValue(0,float(val)*DAC_Constant_S5)
+		stdin, stdout, stderr = self.ip.ssh.exec_command(DAC_SCAN_STOP)
 		#self.FanSpeedFlag = False
 		#self.card.enableCounter(False)
+		self.HVScan.StartBtn.setEnabled(True)
+		self.HVScan.StopBtn.setEnabled(False)
+		self.Signal_Read.SaveBtn.setEnabled(True)
+		self.Data_Analysis.AnalyBtn.setEnabled(True)
+
 
 #DC_Voltage
 	def SetDC1(self):## Fixed Voltage
-		value1= self.DC_Voltage.DC_Voltage1.spin.value()
-		DC1_value_out =  value1 * DAC_Constant_S5
+		value1 = self.DC_Voltage.DC_Voltage1.spin.value()
+		DC1_value_out = value1 * DAC_Constant_S5
 		cmd = DAC_DC + str(DC1_value_out)
-		
-
+		#print cmd
+		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
+		self.DC_Voltage.DC1_Label2.setText(str(value1))
 
 	def SetDC2(self): ##ESI
 		value2 = self.DC_Voltage.DC_Voltage2.spin.value()
 		DC2_value_out = value2 * DAC_Constant_S5
+		cmd = DAC_ESI + str(DC2_value_out)
+		#print cmd
+		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
+		self.DC_Voltage.DC2_Label2.setText(str(value2))
 
 
 #Fan_Control
-	def FanSpeedOut(self):
-		while (self.FanSpeedFlag == True):
-			FS_read = self.card.readFreq()
-			#print(FS_read)
-			self.Fan_Control.text2.setText(str(FS_read))
-			self.Fan_Control.text2.show()
-			time.sleep(1)
+#	def FanSpeedOut(self):
+#		while (self.FanSpeedFlag == True):
+#			FS_read = self.card.readFreq()
+#			#print(FS_read)
+#			self.Fan_Control.text2.setText(str(FS_read))
+#			self.Fan_Control.text2.show()
+#			time.sleep(1)
 
 	def SetFanSpeed(self):
-		FS_value = float(self.Fan_Control.Fan_Speed.spin.value())/1000.0
-		self.card.writeAoValue(0, FS_value)
-		self.FanSpeedFlag = True
-		self.card.enableCounter(True)
-		gt2 = threading.Thread(target = self.FanSpeedOut)
-		gt2.start()
+		value3 = self.Fan_Control.Fan_Speed.spin.value()
+		FS_value = float(value3)/1000.0
+		#self.card.writeAoValue(0, FS_value)
+		cmd = DAC_FAN + str(FS_value)
+		#print cmd
+		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
+		self.Fan_Control.text2.setText(str(value3))
+		#self.FanSpeedFlag = True
+		#self.card.enableCounter(True)
+		#gt2 = threading.Thread(target = self.FanSpeedOut)
+		#gt2.start()
 
 #Signal_Read
 	def SaveData(self):
@@ -436,18 +523,42 @@ class mainWindow(QMainWindow):
 		fo = open(SaveFileName, "w+")
 		number = len(self.data)
 		for i in range (0, number):
-                        fo.write(str("%2.4f" %self.dv[i])+","+str("%2.4f" %self.data[i])+"\n")
+			fo.write(str("%2.4f" %self.dv[i])+","+str("%2.4f" %self.data[i])+"\n")
 		fo.close()
-	def ExitProg(self):
-                self.FanSpeedFlag = False
-                self.card.enableCounter(False)
-                self.card.writeAoValue(0, 0)
-                self.card.writeAoValue(1, 0)
-                self.I2C.DacClose(I2C_DAC1_ADDRESS)
-                self.I2C.DacClose(I2C_DAC2_ADDRESS)
-                self.close()
 
-		
+#Data_Analysis
+	def LoadData(self):
+		self.data = []
+		self.dv = []
+		OpenFileName = QFileDialog.getOpenFileName(self,"Load Signal Data","./","Text Files (*.txt)")
+		if os.path.exists(OpenFileName):
+			temp = [line.rstrip('\n') for line in open(OpenFileName)]
+			for a in temp:
+				b = a.split(',')
+				self.dv.append(float(b[0]))
+				self.data.append(float(b[1]))
+			self.plot.ax.clear()
+			self.plot.ax.plot(self.dv,self.data, '-')
+			self.plot.canvas.draw()
+			self.Data_Analysis.AnalyBtn.setEnabled(True)
+
+	def AnalysisData(self):
+		value1 = float(self.Data_Analysis.Threshold.spin.value() / 1000.0)
+		value2 = float(self.Data_Analysis.Noise.spin.value() / 1000.0)
+		peaks, _= find_peaks(self.data, height = value1, prominence = (value2, None))
+		print value1
+		print value2
+		print peaks
+
+
+#	def ExitProg(self):
+#                self.FanSpeedFlag = False
+#                self.card.enableCounter(False)
+#                self.card.writeAoValue(0, 0)
+#                self.card.writeAoValue(1, 0)
+#                self.I2C.DacClose(I2C_DAC1_ADDRESS)
+#                self.I2C.DacClose(I2C_DAC2_ADDRESS)
+#                self.close()		
 		
 
 if __name__ == '__main__':
