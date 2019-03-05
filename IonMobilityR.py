@@ -413,7 +413,7 @@ class mainWindow(QMainWindow):
                                 self.HVScan.text2.show()
                                 time.sleep(TD_value_float)
                                 #SR_read = self.card.readAiAve(0,DAC_Average_Number )
-                                SR_read = 0
+                                SR_read = 0.0
                                 stdin, stdout, stderr = self.ip.ssh.exec_command(DAC_SCAN_READ)
                                 for line in stdout:
                                 	SR_read = float(line)
