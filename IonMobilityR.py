@@ -45,10 +45,10 @@ Noise_MAX = 100000
 SETTING_FILEPATH = "set"
 SETTING_FILENAME = "set/setting.txt"
 DEFAULT_FILENAME = "Signal_Read_Out.txt"
+LOGO_FILENAME = "set/logo.png"
 
 I2CDAC_CONV_CONST = 4095.0/5.0
 
-VERSION = "IonMobilityR V1.00"
 DAC_SCAN = 'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 1 '
 DAC_SCAN_READ = 'LD_LIBRARY_PATH=/opt/redpitaya/lib ./ADC_MV 0 10 1'
 DAC_SCAN_STOP = 'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 1 0'
@@ -59,6 +59,12 @@ DAC_FAN =  'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 4 '
 HOST_NAME = "root"
 HOST_PWD = "root"
 HOST_PORT = 22
+
+TITLE_TEXT = " GRC Ion Mobility Spectrometer "
+VERSION_TEXT = TITLE_TEXT + "\n" + \
+" IonMobilityR V1.01 \n\n" + \
+" Copyright @ 2019 TAIP \n" + \
+" Maintain by Quantaser Photonics Co. Ltd "
 
 class adjustBlock():
 	def __init__(self, name, minValue, maxValue):
@@ -94,7 +100,7 @@ class outputPlot(QWidget):
 		self.toolbar = NavigationToolbar(self.canvas, self)
 		w=QWidget()
 		picout = QLabel(w)
-		lg = QPixmap("logo.png")
+		lg = QPixmap(LOGO_FILENAME)
 		logo = lg.scaled(500, 90, Qt.KeepAspectRatio)
 		picout.setPixmap(logo)
 		layout = QGridLayout()
@@ -267,7 +273,7 @@ class connectBlock():
 class mainWindow(QMainWindow):
 	def __init__(self, parent=None):
 		super (mainWindow, self).__init__(parent)
-		self.setWindowTitle(" GRC Ion Mobility Spectrometer ")
+		self.setWindowTitle(TITLE_TEXT)
 		self.resize(1280,840)
 		self.move(50,50)
 		self.ip = connectBlock()
@@ -279,11 +285,11 @@ class mainWindow(QMainWindow):
 		self.plot = outputPlot()
 		self.SettingData = [0 for i in range(0, 8)]
 		self.LoadPreset()
-		#menu_about = QAction("&About", self)
-		#menu_about.triggered.connect(self.aboutBox)
+		menu_about = QAction("&Version", self)
+		menu_about.triggered.connect(self.aboutBox)
 		mainMenu = self.menuBar()
-		mainMenu.addMenu("About")
-		#mainMenu.addAction(menu_about)
+		aboutMenu = mainMenu.addMenu("&About")
+		aboutMenu.addAction(menu_about)
 
 		#connect
 		self.ip.connectBtn.clicked.connect(lambda:self.buildConnect())
@@ -338,8 +344,8 @@ class mainWindow(QMainWindow):
 		self.centralWidget().setLayout(mainLayout)
 
 	def aboutBox(self):
-		QMassageBox.about(self, VERSION)
-
+		versionBox = QMessageBox()
+		versionBox.about(self, "Version", VERSION_TEXT)
 
 	def LoadPreset(self):
 		if os.path.exists(SETTING_FILENAME):
