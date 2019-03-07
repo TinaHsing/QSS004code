@@ -36,11 +36,11 @@ DC_Voltage2_MAX = 4000
 Fan_Speed_MIN = 0
 Fan_Speed_MAX = 5000
 
-Threshold_MIN = -10*1000
+Threshold_MIN = -100*1000
 Threshold_MAX = 10*1000
 
 Noise_MIN = 0
-Noise_MAX = 1000
+Noise_MAX = 100000
 
 SETTING_FILEPATH = "set"
 SETTING_FILENAME = "set/setting.txt"
@@ -55,8 +55,6 @@ DAC_SCAN_STOP = 'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 1 0'
 DAC_DC =   'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 2 '
 DAC_ESI =  'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 3 '
 DAC_FAN =  'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 4 '
-
-ConnectionStatus = False
 
 HOST_NAME = "root"
 HOST_PWD = "root"
@@ -175,6 +173,7 @@ class Data_Analysis_Group(QTabWidget):
 		self.AnalyBtn = QPushButton("Analysis")
 		#self.LoadBtn.setEnabled(False)
 		self.AnalyBtn.setEnabled(False)
+		self.Noise.coarse.valueChanged.connect(lambda:self.NoiseChange())
 
 	def SubBlockWidget(self):
 		layout = QGridLayout()
@@ -186,6 +185,9 @@ class Data_Analysis_Group(QTabWidget):
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
 		return self.GroupBox
+
+	def NoiseChange(self):
+		self.AnalyBtn.setEnabled(True)
 
 class DC_Voltage_Group(QTabWidget):
 	def __init__(self, parent=None):
@@ -310,6 +312,7 @@ class mainWindow(QMainWindow):
 		#Data_Analysis
 		self.Data_Analysis.LoadBtn.clicked.connect(lambda:self.LoadData())
 		self.Data_Analysis.AnalyBtn.clicked.connect(lambda:self.AnalysisData())
+		self.Data_Analysis.Threshold.coarse.valueChanged.connect(lambda:self.ShowThreshold())
 
 		#ExitProg
 		#self.Signal_Read.ExitBtn.clicked.connect(lambda:self.ExitProg())
@@ -359,7 +362,6 @@ class mainWindow(QMainWindow):
 
 #connect
 	def buildConnect(self):
-		global ConnectionStatus
 		self.ip.host = "rp-"+str(self.ip.connectIP.text())+".local"
 		#print self.ip.host
 		try:
@@ -384,7 +386,6 @@ class mainWindow(QMainWindow):
 			self.ip.connectStatus.setPalette(pe)
 			self.ip.connectStatus.setText("Connection build")
 			self.ip.connectStatus.show()
-			ConnectionStatus = True
         	self.HVScan.StartBtn.setEnabled(True)
         	#self.HVScan.StopBtn.setEnabled(True)
         	self.DC_Voltage.SetDC1Btn.setEnabled(True)
@@ -520,7 +521,7 @@ class mainWindow(QMainWindow):
 #Signal_Read
 	def SaveData(self):
 		SaveData = [str(line) + '\n' for line in self.data] 
-		SaveFileName = QFileDialog.getSaveFileName(self,"Save Signal Data","./" + DEFAULT_FILENAME,"Text Files (*.txt)")
+		SaveFileName = QFileDialog.getSaveFileName(self,"Save Signal Data",DEFAULT_FILENAME,"Text Files (*.txt)")
 		fo = open(SaveFileName, "w+")
 		number = len(self.data)
 		for i in range (0, number):
@@ -531,7 +532,7 @@ class mainWindow(QMainWindow):
 	def LoadData(self):
 		self.data = []
 		self.dv = []
-		OpenFileName = QFileDialog.getOpenFileName(self,"Load Signal Data","./","Text Files (*.txt)")
+		OpenFileName = QFileDialog.getOpenFileName(self,"Load Signal Data","","Text Files (*.txt)")
 		if os.path.exists(OpenFileName):
 			temp = [line.rstrip('\n') for line in open(OpenFileName)]
 			for a in temp:
@@ -547,10 +548,23 @@ class mainWindow(QMainWindow):
 		value1 = float(self.Data_Analysis.Threshold.spin.value() / 1000.0)
 		value2 = float(self.Data_Analysis.Noise.spin.value() / 1000.0)
 		peaks, _= find_peaks(self.data, height = value1, prominence = (value2, None))
-		print value1
-		print value2
-		print peaks
+		self.Data_Analysis.AnalyBtn.setEnabled(False)
+		#print peaks
+		for index in peaks:
+			xvalue = self.dv[index]
+			yvalue = self.data[index]
+			ratio = yvalue/xvalue
+			self.plot.ax.axvline(x=xvalue, color='k')
+			self.plot.ax.text(xvalue, yvalue, str(ratio), fontsize=12)
+			self.plot.canvas.draw()
 
+	def ShowThreshold(self):
+		value = float(self.Data_Analysis.Threshold.spin.value() / 1000.0)
+		self.plot.ax.clear()
+		self.plot.ax.plot(self.dv, self.data, '-')
+		self.plot.ax.axhline(y=value, color='r')
+		self.plot.canvas.draw()
+		self.Data_Analysis.AnalyBtn.setEnabled(True)
 
 #	def ExitProg(self):
 #                self.FanSpeedFlag = False
