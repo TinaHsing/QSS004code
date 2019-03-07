@@ -36,11 +36,11 @@ DC_Voltage2_MAX = 4000
 Fan_Speed_MIN = 0
 Fan_Speed_MAX = 5000
 
-Threshold_MIN = -100*1000
+Threshold_MIN = -10*1000
 Threshold_MAX = 10*1000
 
-Noise_MIN = 0
-Noise_MAX = 100000
+Noise_MIN = 1
+Noise_MAX = 100
 
 SETTING_FILEPATH = "set"
 SETTING_FILENAME = "set/setting.txt"
@@ -78,6 +78,7 @@ class adjustBlock():
 		self.coarse.sliderMoved.connect(self.update_spin)
 		self.spin.setRange(minValue, maxValue)
 		self.spin.valueChanged.connect(self.update_slider)
+		self.spin.setSingleStep(1)
 	def adjBlockWidget(self):
 		adjLayout = QHBoxLayout() 
 		adjLayout.addWidget(self.coarse)
@@ -174,7 +175,7 @@ class Data_Analysis_Group(QTabWidget):
 		super(Data_Analysis_Group, self).__init__(parent)
 		self.GroupBox = QGroupBox("Data Analysis")
 		self.Threshold = adjustBlock("Threshold (mV)", Threshold_MIN, Threshold_MAX)
-		self.Noise = adjustBlock("Noise (mV)", Noise_MIN, Noise_MAX)
+		self.Noise = adjustBlock("Width (points)", Noise_MIN, Noise_MAX)
 		self.LoadBtn = QPushButton("Load")
 		self.AnalyBtn = QPushButton("Analysis")
 		#self.LoadBtn.setEnabled(False)
@@ -268,7 +269,7 @@ class connectBlock():
         self.connectGroupBox.setLayout(connectLayout)
         self.connectGroupBox.show()
         return self.connectGroupBox
-    
+
 
 class mainWindow(QMainWindow):
 	def __init__(self, parent=None):
@@ -301,7 +302,7 @@ class mainWindow(QMainWindow):
 		#self.Vout2 = 0.0
 		self.HVScanFlag = False
 
-		#DC_Voltage
+        #DC_Voltage
 		self.DC_Voltage.SetDC1Btn.clicked.connect(lambda:self.SetDC1())
 		self.DC_Voltage.SetDC2Btn.clicked.connect(lambda:self.SetDC2())
 
@@ -387,6 +388,16 @@ class mainWindow(QMainWindow):
 			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 8 0')
 			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 9 0')
 			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 10 0')
+
+			self.SettingData[0] = self.ip.connectIP.text()
+			#print(self.SettingData)
+			SettingData = [str(line) + '\n' for line in self.SettingData] 
+			if not os.path.isdir(SETTING_FILEPATH):
+				os.mkdir(SETTING_FILEPATH)
+			fo = open(SETTING_FILENAME, "w+")
+			fo.writelines(SettingData)
+			fo.close()
+
 			pe = QPalette()
 			pe.setColor(QPalette.WindowText,Qt.black)
 			self.ip.connectStatus.setPalette(pe)
@@ -398,7 +409,6 @@ class mainWindow(QMainWindow):
         	self.DC_Voltage.SetDC2Btn.setEnabled(True)
         	self.Fan_Control.SetBtn.setEnabled(True)
 
-		
 #HVScan
 	def VoltageOut(self):
 		TD_value_float = float(self.HVScan.TimeDelay.spin.value()/1000.0)
@@ -409,42 +419,41 @@ class mainWindow(QMainWindow):
 		self.data = []
 		self.dv = []
 		while (i < loopValue) or (self.HVScanFlag == True):
-                        if (i < loopValue) & (self.HVScanFlag == True):
-                                Vout1 = startValue + stepValue * i
-                                Vout2 = float(Vout1) * DAC_Constant_S5
-                                #self.card.writeAoValue(1, Vout2)
-                                cmd = DAC_SCAN+str(Vout2)
-                                #print cmd
-                                stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-                                self.HVScan.text2.setText(str(Vout1))
-                                self.HVScan.text2.show()
-                                time.sleep(TD_value_float)
-                                #SR_read = self.card.readAiAve(0,DAC_Average_Number )
-                                SR_read = 0.0
-                                stdin, stdout, stderr = self.ip.ssh.exec_command(DAC_SCAN_READ)
-                                for line in stdout:
-                                	SR_read = float(line)
-                                	#print SR_read
-                                self.data.append(SR_read)
-                                self.dv.append(i*stepValue+startValue)
-                                self.plot.ax.clear()
-                                self.plot.ax.plot(self.dv,self.data, '-')
-                                self.plot.canvas.draw()
-                                self.Signal_Read.text.setText(str("%2.4f"%SR_read))
-                                self.Signal_Read.text.show()
-                                i = i + 1
-                        elif (self.HVScanFlag == True):
-                                time.sleep(TD_value_float)
-                                #SR_read = self.card.readAiAve(0,DAC_Average_Number )
-                                stdin, stdout, stderr = self.ip.ssh.exec_command(DAC_SCAN_READ)
-                                for line in stdout:
-                                	SR_read = float(line)
-                                	#print SR_read
-                                self.Signal_Read.text.setText(str("%2.4f"%SR_read))
-                                self.Signal_Read.text.show()
-
-                        else:
-                                i=loopValue
+			if (i < loopValue) & (self.HVScanFlag == True):
+				Vout1 = startValue + stepValue * i
+				Vout2 = float(Vout1) * DAC_Constant_S5
+				#self.card.writeAoValue(1, Vout2)
+				cmd = DAC_SCAN+str(Vout2)
+				#print cmd
+				stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
+				self.HVScan.text2.setText(str(Vout1))
+				self.HVScan.text2.show()
+				time.sleep(TD_value_float)
+				#SR_read = self.card.readAiAve(0, DAC_Average_Number)
+				SR_read = 0.0
+				stdin, stdout, stderr = self.ip.ssh.exec_command(DAC_SCAN_READ)
+				for line in stdout:
+					SR_read = float(line)
+					#print SR_read
+				self.data.append(SR_read)
+				self.dv.append(i*stepValue+startValue)
+				self.plot.ax.clear()
+				self.plot.ax.plot(self.dv,self.data, '-')
+				self.plot.canvas.draw()
+				self.Signal_Read.text.setText(str("%2.4f"%SR_read))
+				self.Signal_Read.text.show()
+				i = i + 1
+			elif (self.HVScanFlag == True):
+				time.sleep(TD_value_float)
+				#SR_read = self.card.readAiAve(0,DAC_Average_Number )
+				stdin, stdout, stderr = self.ip.ssh.exec_command(DAC_SCAN_READ)
+				for line in stdout:
+					SR_read = float(line)
+					#print SR_read
+				self.Signal_Read.text.setText(str("%2.4f"%SR_read))
+				self.Signal_Read.text.show()
+			else:
+				i = loopValue
  
 
 	def StartScan(self):
@@ -552,8 +561,11 @@ class mainWindow(QMainWindow):
 
 	def AnalysisData(self):
 		value1 = float(self.Data_Analysis.Threshold.spin.value() / 1000.0)
-		value2 = float(self.Data_Analysis.Noise.spin.value() / 1000.0)
-		peaks, _= find_peaks(self.data, height = value1, prominence = (value2, None))
+		value2 = float(self.Data_Analysis.Noise.spin.value())
+		peaks, _= find_peaks(self.data, height = value1, width = value2)
+		self.plot.ax.clear()
+		self.plot.ax.plot(self.dv,self.data, '-')
+		self.plot.canvas.draw()
 		self.Data_Analysis.AnalyBtn.setEnabled(False)
 		#print peaks
 		for index in peaks:
