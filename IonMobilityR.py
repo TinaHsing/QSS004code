@@ -1,16 +1,16 @@
 import os
 import sys
+import time
+import paramiko
+import threading
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
-
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-import threading
-import time
-import paramiko
 import scipy
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, peak_widths
+
 
 StartVoltage_MIN = 1000
 StartVoltage_MAX = 1900
@@ -44,7 +44,8 @@ Noise_MAX = 100
 
 SETTING_FILEPATH = "set"
 SETTING_FILENAME = "set/setting.txt"
-DEFAULT_FILENAME = "Signal_Read_Out.txt"
+READOUT_FILENAME = "Signal_Read_Out.txt"
+ANALYSIS_FILENAME = "Data_Analysis.txt"
 LOGO_FILENAME = "set/logo.png"
 
 I2CDAC_CONV_CONST = 4095.0/5.0
@@ -62,7 +63,7 @@ HOST_PORT = 22
 
 TITLE_TEXT = " GRC Ion Mobility Spectrometer "
 VERSION_TEXT = TITLE_TEXT + "\n" + \
-" IonMobilityR V1.01 \n\n" + \
+" IonMobilityR V1.02 \n\n" + \
 " Copyright @ 2019 TAIP \n" + \
 " Maintain by Quantaser Photonics Co. Ltd "
 
@@ -113,7 +114,7 @@ class outputPlot(QWidget):
 		self.ax.set_xlabel("Voltage Difference (V)")
 		self.ax.set_ylabel("Voltage Output (V)")
 
-class Signal_Read_Group(QTabWidget):
+class Signal_Read_Group(QWidget):
     def __init__(self, parent=None):
         super(Signal_Read_Group, self).__init__(parent)
         self.GroupBox = QGroupBox("Signal Read")
@@ -139,7 +140,7 @@ class Signal_Read_Group(QTabWidget):
         self.GroupBox.show()
         return self.GroupBox
 
-class HVScan_Group(QTabWidget):
+class HVScan_Group(QWidget):
 	def __init__(self, parent=None):
 		super(HVScan_Group, self).__init__(parent)
 		self.GroupBox = QGroupBox("High Voltage Scan")
@@ -170,7 +171,7 @@ class HVScan_Group(QTabWidget):
 		self.GroupBox.show()
 		return self.GroupBox
 
-class Data_Analysis_Group(QTabWidget):
+class Data_Analysis_Group(QWidget):
 	def __init__(self, parent=None):
 		super(Data_Analysis_Group, self).__init__(parent)
 		self.GroupBox = QGroupBox("Data Analysis")
@@ -178,16 +179,19 @@ class Data_Analysis_Group(QTabWidget):
 		self.Noise = adjustBlock("Width (points)", Noise_MIN, Noise_MAX)
 		self.LoadBtn = QPushButton("Load")
 		self.AnalyBtn = QPushButton("Analysis")
+		self.SaveBtn = QPushButton("Save")
 		#self.LoadBtn.setEnabled(False)
 		self.AnalyBtn.setEnabled(False)
+		self.SaveBtn.setEnabled(False)
 		self.Noise.coarse.valueChanged.connect(lambda:self.NoiseChange())
 
 	def SubBlockWidget(self):
 		layout = QGridLayout()
-		layout.addWidget(self.Threshold.adjBlockWidget(),0,0,1,2)
-		layout.addWidget(self.Noise.adjBlockWidget(),1,0,1,2)
+		layout.addWidget(self.Threshold.adjBlockWidget(),0,0,1,3)
+		layout.addWidget(self.Noise.adjBlockWidget(),1,0,1,3)
 		layout.addWidget(self.LoadBtn,2,0,1,1)
 		layout.addWidget(self.AnalyBtn,2,1,1,1)
+		layout.addWidget(self.SaveBtn,2,2,1,1)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
@@ -196,7 +200,7 @@ class Data_Analysis_Group(QTabWidget):
 	def NoiseChange(self):
 		self.AnalyBtn.setEnabled(True)
 
-class DC_Voltage_Group(QTabWidget):
+class DC_Voltage_Group(QWidget):
 	def __init__(self, parent=None):
 		super(DC_Voltage_Group, self).__init__(parent)
 		self.GroupBox = QGroupBox("DC Voltage Control")
@@ -227,7 +231,7 @@ class DC_Voltage_Group(QTabWidget):
 		self.GroupBox.show()
 		return self.GroupBox
 
-class Fan_Control_Group(QTabWidget):
+class Fan_Control_Group(QWidget):
 	def __init__(self, parent=None):
 		super(Fan_Control_Group, self).__init__(parent)
 		self.GroupBox = QGroupBox("Fan Control")
@@ -291,6 +295,7 @@ class mainWindow(QMainWindow):
 		mainMenu = self.menuBar()
 		aboutMenu = mainMenu.addMenu("&About")
 		aboutMenu.addAction(menu_about)
+		self.main_UI()
 
 		#connect
 		self.ip.connectBtn.clicked.connect(lambda:self.buildConnect())
@@ -314,12 +319,13 @@ class mainWindow(QMainWindow):
 		self.Signal_Read.SaveBtn.clicked.connect(lambda:self.SaveData())
 		self.data = []
 		self.dv = []
-		self.main_UI()
 
 		#Data_Analysis
 		self.Data_Analysis.LoadBtn.clicked.connect(lambda:self.LoadData())
 		self.Data_Analysis.AnalyBtn.clicked.connect(lambda:self.AnalysisData())
+		self.Data_Analysis.SaveBtn.clicked.connect(lambda:self.SaveAnaData())
 		self.Data_Analysis.Threshold.coarse.valueChanged.connect(lambda:self.ShowThreshold())
+		self.analist = []
 
 		#ExitProg
 		#self.Signal_Read.ExitBtn.clicked.connect(lambda:self.ExitProg())
@@ -329,10 +335,10 @@ class mainWindow(QMainWindow):
 		mainLayout.addWidget(self.HVScan.SubBlockWidget(),0,0,2,2)
 		mainLayout.addWidget(self.DC_Voltage.SubBlockWidget(),0,2,2,1)
 		mainLayout.addWidget(self.Fan_Control.SubBlockWidget(),0,3,1,1)
-		mainLayout.addWidget(self.ip.connectBlockWidget(), 0, 4, 1, 1)
 		mainLayout.addWidget(self.Signal_Read.SubBlockWidget(),1,3,1,1)
+		mainLayout.addWidget(self.ip.connectBlockWidget(),0,4,1,1)
 		mainLayout.addWidget(self.Data_Analysis.SubBlockWidget(),1,4,1,1)
-		mainLayout.addWidget(self.plot,2,0,2,5)
+		mainLayout.addWidget(self.plot,2,0,1,5)
 		mainLayout.setRowStretch(0, 1)
 		mainLayout.setRowStretch(1, 1)
 		mainLayout.setRowStretch(2, 5)
@@ -535,8 +541,8 @@ class mainWindow(QMainWindow):
 
 #Signal_Read
 	def SaveData(self):
-		SaveData = [str(line) + '\n' for line in self.data] 
-		SaveFileName = QFileDialog.getSaveFileName(self,"Save Signal Data",DEFAULT_FILENAME,"Text Files (*.txt)")
+		#SaveData = [str(line) + '\n' for line in self.data] 
+		SaveFileName = QFileDialog.getSaveFileName(self,"Save Signal Data",READOUT_FILENAME,"Text Files (*.txt)")
 		fo = open(SaveFileName, "w+")
 		number = len(self.data)
 		for i in range (0, number):
@@ -562,19 +568,56 @@ class mainWindow(QMainWindow):
 	def AnalysisData(self):
 		value1 = float(self.Data_Analysis.Threshold.spin.value() / 1000.0)
 		value2 = float(self.Data_Analysis.Noise.spin.value())
+
 		peaks, _= find_peaks(self.data, height = value1, width = value2)
+		#print peaks
+		peak_num = len(peaks)
+		results_half = peak_widths(self.data, peaks, rel_height = 0.5)
+		#print results_half
+
 		self.plot.ax.clear()
 		self.plot.ax.plot(self.dv,self.data, '-')
 		self.plot.canvas.draw()
-		self.Data_Analysis.AnalyBtn.setEnabled(False)
-		#print peaks
+
+		self.analist = []
 		for index in peaks:
 			xvalue = self.dv[index]
+			self.analist.append(xvalue)
 			yvalue = self.data[index]
-			ratio = yvalue/xvalue
+			self.analist.append(yvalue)
+			#ratio = yvalue / xvalue
+			#list.append(ratio)
+			self.analist.append(0.0)
+
+		for i in xrange(0, peak_num):
+			#print results_half[0][i]
+			deltax = results_half[0][i]
+			self.analist[3*i+2] = deltax
+			xvalue = self.analist[3*i+0]
+			yvalue = self.analist[3*i+1]
+			ratio = yvalue / deltax
 			self.plot.ax.axvline(x=xvalue, color='k')
 			self.plot.ax.text(xvalue, yvalue, str(ratio), fontsize=12)
 			self.plot.canvas.draw()
+
+		#print self.analist
+		self.Data_Analysis.AnalyBtn.setEnabled(False)
+		self.Data_Analysis.SaveBtn.setEnabled(True)
+
+	def SaveAnaData(self):
+		SaveFileName = QFileDialog.getSaveFileName(self,"Save Analysis Data",ANALYSIS_FILENAME,"Text Files (*.txt)")
+		fo = open(SaveFileName, "w+")
+		number = len(self.analist)
+		fo.write("peak_X, peak_Y, width")
+		for i in range (0, number):
+			if (i % 3) == 0:
+				fo.write("\n")
+			else:
+				fo.write(", ")
+			fo.write(str("%2.4f" %self.analist[i]))
+		fo.write("\n")
+		fo.close()
+		self.Data_Analysis.SaveBtn.setEnabled(False)
 
 	def ShowThreshold(self):
 		value = float(self.Data_Analysis.Threshold.spin.value() / 1000.0)
