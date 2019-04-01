@@ -409,6 +409,7 @@ class mainWindow(QMainWindow):
 			self.ip.connectStatus.setPalette(pe)
 			self.ip.connectStatus.setText("Connection build")
 			self.ip.connectStatus.show()
+            self.ip.connectBtn.setEnabled(False)
         	self.HVScan.StartBtn.setEnabled(True)
         	#self.HVScan.StopBtn.setEnabled(True)
         	self.DC_Voltage.SetDC1Btn.setEnabled(True)
@@ -463,7 +464,7 @@ class mainWindow(QMainWindow):
  
 
 	def StartScan(self):
-		self.SettingData[0] = self.ip.connectIP.text()
+		#self.SettingData[0] = self.ip.connectIP.text()
 		self.SettingData[1] = self.HVScan.StartVoltage.spin.value()
 		self.SettingData[2] = self.HVScan.VoltageStep.spin.value()
 		self.SettingData[3] = self.HVScan.Loop.spin.value()
