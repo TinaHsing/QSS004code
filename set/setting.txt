@@ -1,4 +1,4 @@
-input hostname
+F05719
 1000
 200
 1
@@ -6,3 +6,4 @@ input hostname
 0
 0
 0
+50

@@ -6,3 +6,4 @@ input hostname
 0
 0
 0
+50
