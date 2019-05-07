@@ -21,11 +21,14 @@ VoltageStep_MAX = 2000
 Loop_MIN = 1
 Loop_MAX = 2000
 
-TimeDelay_MIN = 100
+TimeDelay_MIN = 0
 TimeDelay_MAX = 10000
 
 MV_Numver_MIN = 50
 MV_Numver_MAX = 30000
+
+AVG_time_MIN = 1
+AVG_time_MAX = 100
 
 DAC_Constant_S5 = 6.0/5000.0
 #DAC_Average_Number = 10
@@ -153,9 +156,10 @@ class HVScan_Group(QWidget):
 		self.StartVoltage = adjustBlock("Start Voltage (V)", StartVoltage_MIN, StartVoltage_MAX)
 		self.DCmode = QPushButton("DC mode")	# 2019.5.7
 		self.VoltageStep = adjustBlock("Voltage Step (mV)", VoltageStep_MIN, VoltageStep_MAX)
-		self.MV_Number = adjustBlock("MV Average Number", MV_Numver_MIN, MV_Numver_MAX)
 		self.Loop = adjustBlock("Loop", Loop_MIN, Loop_MAX)
 		self.TimeDelay = adjustBlock("Time Delay (ms)", TimeDelay_MIN, TimeDelay_MAX)
+		self.MV_Number = adjustBlock("MV Average Number", MV_Numver_MIN, MV_Numver_MAX)
+		self.AVG_time = adjustBlock("Average Times", AVG_time_MIN, AVG_time_MAX)
 		self.text1 = QLabel("Voltage Out = ")
 		self.text2 = QLabel("0")
 		self.StartBtn = QPushButton("Start")
@@ -168,15 +172,16 @@ class HVScan_Group(QWidget):
 	def SubBlockWidget(self):
 		layout = QGridLayout()
 		layout.addWidget(self.StartVoltage.adjBlockWidget(),0,0,1,2)
-		layout.addWidget(self.VoltageStep.adjBlockWidget(),0,2,1,2)
-		layout.addWidget(self.DCmode,1,1,1,1)
-		layout.addWidget(self.MV_Number.adjBlockWidget(),1,2,1,2)
-		layout.addWidget(self.Loop.adjBlockWidget(),2,0,1,2)
-		layout.addWidget(self.TimeDelay.adjBlockWidget(),2,2,1,2)
+		layout.addWidget(self.VoltageStep.adjBlockWidget(),0,2,1,3)
+		layout.addWidget(self.Loop.adjBlockWidget(),1,0,1,2)
+		layout.addWidget(self.TimeDelay.adjBlockWidget(),1,2,1,3)
+		layout.addWidget(self.AVG_time.adjBlockWidget(),2,0,1,2)
+		layout.addWidget(self.MV_Number.adjBlockWidget(),2,2,1,3)
 		layout.addWidget(self.text1,3,0,1,1)
 		layout.addWidget(self.text2,3,1,1,1)
-		layout.addWidget(self.StartBtn,3,2,1,1)
-		layout.addWidget(self.StopBtn,3,3,1,1)
+		layout.addWidget(self.DCmode,3,2,1,1)
+		layout.addWidget(self.StartBtn,3,3,1,1)
+		layout.addWidget(self.StopBtn,3,4,1,1)
 		layout.setRowStretch(0, 1)
 		layout.setRowStretch(1, 1)
 		layout.setRowStretch(2, 1)
@@ -185,6 +190,7 @@ class HVScan_Group(QWidget):
 		layout.setColumnStretch(1, 1)
 		layout.setColumnStretch(2, 1)
 		layout.setColumnStretch(3, 1)
+		layout.setColumnStretch(4, 1)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
@@ -307,7 +313,7 @@ class mainWindow(QMainWindow):
 		self.Signal_Read = Signal_Read_Group()
 		self.Data_Analysis = Data_Analysis_Group()
 		self.plot = outputPlot()
-		self.SettingData = [0 for i in range(0, 9)]
+		self.SettingData = [0 for i in range(0, 10)]
 		self.LoadPreset()
 		menu_about = QAction("&Version", self)
 		menu_about.triggered.connect(self.aboutBox)
@@ -394,6 +400,8 @@ class mainWindow(QMainWindow):
 		self.Fan_Control.Fan_Speed.spin.setValue(int(self.SettingData[7]))
 		self.HVScan.MV_Number.coarse.setValue(int(self.SettingData[8]))
 		self.HVScan.MV_Number.spin.setValue(int(self.SettingData[8]))
+		self.HVScan.AVG_time.coarse.setValue(int(self.SettingData[9]))
+		self.HVScan.AVG_time.spin.setValue(int(self.SettingData[9]))
 
 #connect
 	def buildConnect(self):
@@ -454,6 +462,7 @@ class mainWindow(QMainWindow):
 	def VoltageOut(self):
 		TD_value_float = float(self.HVScan.TimeDelay.spin.value()/1000.0)
 		MV_Number_str = str(self.HVScan.MV_Number.spin.value())
+		AVG_time_value = int(self.HVScan.AVG_time.spin.value())
 		Fix_Vol_value = self.DC_Voltage.DC_Voltage1.spin.value()
 		#i = 0	# 2019.5.7
 		i = -3
@@ -475,14 +484,19 @@ class mainWindow(QMainWindow):
 				self.HVScan.text2.show()
 				time.sleep(TD_value_float)
 				#SR_read = self.card.readAiAve(0, DAC_Average_Number)
-				SR_read = 0.0
 				#stdin, stdout, stderr = self.ip.ssh.exec_command(ADC_SCAN_READ)
 				cmd = ADC_SCAN_READ + MV_Number_str + ADC_SCAN_READ_gain
 				#print cmd
-				stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-				for line in stdout:
-					SR_read = float(line)
-					#print SR_read
+				SR_read_Total = 0.0
+				for j in range(0, AVG_time_value):
+					SR_read = 0.0
+					stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
+					for line in stdout:
+						SR_read = float(line)
+						#print "for j " + str(j) + " : " + str(SR_read)
+					SR_read_Total = SR_read_Total + SR_read
+				#print "while i " + str(i) + " : " + str(SR_read_Total)
+				SR_read = SR_read_Total / AVG_time_value
 				if (i >= 0):	# 2019.5.7
 					self.data.append(SR_read)
 					self.dv.append(i*stepValue + startValue - Fix_Vol_value)
@@ -521,6 +535,7 @@ class mainWindow(QMainWindow):
 		self.SettingData[6] = self.DC_Voltage.DC_Voltage2.spin.value()
 		self.SettingData[7] = self.Fan_Control.Fan_Speed.spin.value()
 		self.SettingData[8] = self.HVScan.MV_Number.spin.value()
+		self.SettingData[9] = self.HVScan.AVG_time.spin.value()
 		#print(self.SettingData)
 		SettingData = [str(line) + '\n' for line in self.SettingData] 
 		if not os.path.isdir(SETTING_FILEPATH):
