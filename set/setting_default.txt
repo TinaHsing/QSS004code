@@ -2,7 +2,7 @@ input hostname
 1000
 200
 1
-100
+0
 0
 0
 0
