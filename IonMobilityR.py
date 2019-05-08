@@ -136,7 +136,7 @@ class Signal_Read_Group(QWidget):
 		self.text.setPalette(pe)
 		self.text.setAlignment(Qt.AlignCenter)
 		self.text.setFont(QFont("",16,QFont.Bold))
-		self.SaveBtn = QPushButton("Save")
+		self.SaveBtn = QPushButton("Save Data")
 		#self.SubBlockWidget()
 		self.SaveBtn.setEnabled(False)
 
@@ -204,7 +204,7 @@ class Data_Analysis_Group(QWidget):
 		self.Noise = adjustBlock("Width (points)", Noise_MIN, Noise_MAX)
 		self.LoadBtn = QPushButton("Load")
 		self.AnalyBtn = QPushButton("Analysis")
-		self.SaveBtn = QPushButton("Save")
+		self.SaveBtn = QPushButton("Save Analysis")
 		#self.LoadBtn.setEnabled(False)
 		self.AnalyBtn.setEnabled(False)
 		self.SaveBtn.setEnabled(False)
