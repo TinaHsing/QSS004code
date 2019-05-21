@@ -668,9 +668,10 @@ class mainWindow(QMainWindow):
 			self.analist[3*i+2] = deltax
 			xvalue = self.analist[3*i+0]
 			yvalue = self.analist[3*i+1]
-			ratio = yvalue / deltax
+			#ratio = yvalue / deltax
+			ratio = xvalue / deltax
 			self.plot.ax.axvline(x=xvalue, color='k')
-			self.plot.ax.text(xvalue, yvalue, str(ratio), fontsize=12)
+			self.plot.ax.text(xvalue, yvalue, str("%2.3f" %ratio), fontsize=12)
 			self.plot.canvas.draw()
 
 		#print self.analist
