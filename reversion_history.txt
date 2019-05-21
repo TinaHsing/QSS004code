@@ -1,0 +1,7 @@
+IonMobilityR_V1.03
+2019-5-21
+1. change "ratio = yvalue / deltax"
+to "ratio = xvalue / deltax"
+2. change ratio output format to "%2.3f"
+
+
