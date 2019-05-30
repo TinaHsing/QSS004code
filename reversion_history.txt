@@ -1,7 +1,11 @@
 IonMobilityR_V1.03
 2019-5-21
-1. change "ratio = yvalue / deltax"
-to "ratio = xvalue / deltax"
+1. change "ratio = yvalue / deltax" to "ratio = xvalue / deltax"
 2. change ratio output format to "%2.3f"
+2019-5-30
+3. Load bit file
+4. add reset cycle¡Bhold cycle¡Bint cycle
+5. add Scan_reg¡BReg_EOI
+6. remove Time Delay
 
 
