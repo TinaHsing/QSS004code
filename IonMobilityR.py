@@ -43,7 +43,10 @@ Fan_Speed_MIN = 0
 Fan_Speed_MAX = 5000
 
 CYCLE_MIN = 125000
-CYCLE_MAX = 125000000
+CYCLE_MAX = 1250000
+
+INT_CYCLE_MIN = 125000
+INT_CYCLE_MAX = 125000000
 
 Threshold_MIN = -10*1000
 Threshold_MAX = 10*1000
@@ -282,7 +285,7 @@ class Integrator_Group(QWidget):
 		self.GroupBox = QGroupBox("Integrator Group")
 		self.ResetCycle = adjustBlock("Reset Cycle", CYCLE_MIN, CYCLE_MAX, "Reset Time =", "0 (ms)", False)
 		self.HoldCycle = adjustBlock("Hold Cycle", CYCLE_MIN, CYCLE_MAX, "Hold Time =", "0 (ms)", False)
-		self.IntCycle = adjustBlock("Int Cycle", CYCLE_MIN, CYCLE_MAX, "Int Time =", "0 (ms)", False)
+		self.IntCycle = adjustBlock("Int Cycle", INT_CYCLE_MIN, INT_CYCLE_MAX, "Int Time =", "0 (ms)", False)
 		#self.SubBlockWidget()
 
 	def SubBlockWidget(self):
@@ -372,6 +375,10 @@ class mainWindow(QMainWindow):
 		self.Data_Analysis.SaveBtn.clicked.connect(lambda:self.SaveAnaData())
 		self.Data_Analysis.Threshold.coarse.valueChanged.connect(lambda:self.ShowThreshold())
 		self.analist = []
+
+		self.Integrator.ResetCycle.coarse.valueChanged.connect(lambda:self.ShowResetCycle())
+		self.Integrator.HoldCycle.coarse.valueChanged.connect(lambda:self.ShowHoldCycle())
+		self.Integrator.IntCycle.coarse.valueChanged.connect(lambda:self.ShowIntCycle())
 
 		#ExitProg
 		#self.Signal_Read.ExitBtn.clicked.connect(lambda:self.ExitProg())
@@ -476,30 +483,39 @@ class mainWindow(QMainWindow):
 			self.Fan_Control.Fan_Speed.SetBtn.setEnabled(True)
 
 #DCmode
+	def ShowResetCycle(self):
+		TempCycleValue = self.Integrator.ResetCycle.spin.value()
+		CycleValue = float(TempCycleValue) * CYCLE_CONST
+		CycleText = str(CycleValue) + ' (ms)'
+		self.Integrator.ResetCycle.value.setText(CycleText)
+
+	def ShowHoldCycle(self):
+		TempCycleValue = self.Integrator.HoldCycle.spin.value()
+		CycleValue = float(TempCycleValue) * CYCLE_CONST
+		CycleText = str(CycleValue) + ' (ms)'
+		self.Integrator.HoldCycle.value.setText(CycleText)
+
+	def ShowIntCycle(self):
+		TempCycleValue = self.Integrator.IntCycle.spin.value()
+		CycleValue = float(TempCycleValue) * CYCLE_CONST
+		CycleText = str(CycleValue) + ' (ms)'
+		self.Integrator.IntCycle.value.setText(CycleText)
+
 	def SetCycle(self):
 		cmd = RESET_CYCLE_CMD + str(self.SettingData[10])
 		#print cmd
 		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-		CycleValue = float(self.SettingData[10]) * CYCLE_CONST
-		CycleText = str(CycleValue) + ' (ms)'
-		self.Integrator.ResetCycle.value.setText(CycleText)
-		time.sleep(0.001)
+		self.ShowResetCycle()
 
 		cmd = HOLD_CYCLE_CMD + str(self.SettingData[11])
 		#print cmd
 		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-		CycleValue = float(self.SettingData[11]) * CYCLE_CONST
-		CycleText = str(CycleValue) + ' (ms)'
-		self.Integrator.HoldCycle.value.setText(CycleText)
-		time.sleep(0.001)
+		self.ShowHoldCycle()
 
 		cmd = INT_CYCLE_CMD + str(self.SettingData[12])
 		#print cmd
 		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-		CycleValue = float(self.SettingData[12]) * CYCLE_CONST
-		CycleText = str(CycleValue) + ' (ms)'
-		self.Integrator.IntCycle.value.setText(CycleText)
-		time.sleep(0.001)
+		self.ShowIntCycle()
 
 
 	def DCmode(self):	# 2019.5.7
@@ -567,11 +583,10 @@ class mainWindow(QMainWindow):
 				cmd = SCAN_REG_CMD + '1'
 				#print cmd
 				stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-				time.sleep(0.001)
-				cmd = SCAN_REG_CMD + '0'
-				#print cmd
-				stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-				time.sleep(0.001)
+				# time.sleep(0.001)
+				# cmd = SCAN_REG_CMD + '0'
+				# #print cmd
+				# stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 
 				while (reg_EOI == 0):
 					stdin, stdout, stderr = self.ip.ssh.exec_command(REG_EOI_CMD)
@@ -579,7 +594,6 @@ class mainWindow(QMainWindow):
 						#print line
 						reg_EOI = int(line[9])
 						#print 'reg_EOI = ' + str(reg_EOI)
-					time.sleep(0.001)
 
 				#time.sleep(TD_value_float)
 				#SR_read = self.card.readAiAve(0, DAC_Average_Number)
