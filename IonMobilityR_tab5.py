@@ -42,13 +42,11 @@ DC_Voltage2_MAX = 4000
 Fan_Speed_MIN = 0
 Fan_Speed_MAX = 5000
 
-#CYCLE_MIN = 125000
-#CYCLE_MAX = 1250000
+CYCLE_MIN = 125000
+CYCLE_MAX = 1250000
 
-#INT_CYCLE_MIN = 125000
-#INT_CYCLE_MAX = 125000000
-INT_CYCLE_MIN = 1
-INT_CYCLE_MAX = 1000
+INT_CYCLE_MIN = 125000
+INT_CYCLE_MAX = 125000000
 
 Threshold_MIN = -10*1000
 Threshold_MAX = 10*1000
@@ -63,8 +61,7 @@ ANALYSIS_FILENAME = "Data_Analysis.txt"
 LOGO_FILENAME = "set/logo.png"
 
 I2CDAC_CONV_CONST = 4095.0/5.0
-#CYCLE_CONST = 8.0/1000000.0
-CYCLE_CONST = 125000	#1000000/8
+CYCLE_CONST = 8.0/1000000.0
 
 DAC_SCAN = 		'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 1 '
 #ADC_SCAN_READ = 'LD_LIBRARY_PATH=/opt/redpitaya/lib ./ADC_MV 0 10 1'
@@ -125,19 +122,19 @@ class outputPlot(QWidget):
 		self.figure = Figure(figsize=(6,3))
 		self.canvas = FigureCanvas(self.figure)
 		self.toolbar = NavigationToolbar(self.canvas, self)
-		# w = QWidget()
-		# picout = QLabel(w)
-		# lg = QPixmap(LOGO_FILENAME)
-		# logo = lg.scaled(500, 90, Qt.KeepAspectRatio)
-		# picout.setPixmap(logo)
+		w=QWidget()
+		picout = QLabel(w)
+		lg = QPixmap(LOGO_FILENAME)
+		logo = lg.scaled(500, 90, Qt.KeepAspectRatio)
+		picout.setPixmap(logo)
 		layout = QGridLayout()
 		layout.addWidget(self.canvas,0,0,1,2)
 		layout.addWidget(self.toolbar,1,0,1,1)
-		#layout.addWidget(picout,1,1,1,1)
+		layout.addWidget(picout,1,1,1,1)
 		self.setLayout(layout)
 		self.ax = self.figure.add_subplot(111)
 		self.ax.set_xlabel("delta V")
-		self.ax.set_ylabel("Voltage Output (mV)")
+		self.ax.set_ylabel("Voltage Output (V)")
 
 class Signal_Read_Group(QWidget):
 	def __init__(self, parent=None):
@@ -152,14 +149,14 @@ class Signal_Read_Group(QWidget):
 		self.text.setPalette(pe)
 		self.text.setAlignment(Qt.AlignCenter)
 		self.text.setFont(QFont("",16,QFont.Bold))
-		self.SaveDataBtn = QPushButton("Save Signal Data")
+		self.SaveBtn = QPushButton("Save Signal Data")
 		#self.SubBlockWidget()
-		self.SaveDataBtn.setEnabled(False)
+		self.SaveBtn.setEnabled(False)
 
 	def SubBlockWidget(self):
-		layout = QGridLayout()
-		layout.addWidget(self.text,0,0,3,2)
-		layout.addWidget(self.SaveDataBtn,1,2,1,1)
+		layout = QVBoxLayout()
+		layout.addWidget(self.text)
+		layout.addWidget(self.SaveBtn)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
@@ -177,13 +174,13 @@ class HVScan_Group(QWidget):
 		self.text2 = QLabel("0 V")
 
 	def SubBlockWidget(self):
-		layout = QGridLayout()
-		layout.addWidget(self.StartVoltage.spinBlockWidget(),0,0,1,2)
-		layout.addWidget(self.VoltageStep.spinBlockWidget(),0,2,1,2)
-		layout.addWidget(self.Loop.spinBlockWidget(),1,0,1,2)
+		layout = QHBoxLayout()
+		layout.addWidget(self.StartVoltage.spinBlockWidget())
+		layout.addWidget(self.VoltageStep.spinBlockWidget())
+		layout.addWidget(self.Loop.spinBlockWidget())
 		#layout.addWidget(self.TimeDelay.spinBlockWidget())
-		layout.addWidget(self.text1,1,2,1,1)
-		layout.addWidget(self.text2,1,3,1,1)
+		layout.addWidget(self.text1)
+		layout.addWidget(self.text2)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
@@ -206,10 +203,10 @@ class Data_Sampling_Group(QWidget):
 		frameLayout.addWidget(self.radioBtn2)
 		self.frame.setLayout(frameLayout)
 
-		layout = QGridLayout()
-		layout.addWidget(self.frame,0,0,1,2)
-		layout.addWidget(self.MV_Number.spinBlockWidget(),1,0,1,1)
-		layout.addWidget(self.AVG_time.spinBlockWidget(),1,1,1,1)
+		layout = QHBoxLayout()
+		layout.addWidget(self.frame)
+		layout.addWidget(self.MV_Number.spinBlockWidget())
+		layout.addWidget(self.AVG_time.spinBlockWidget())
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
@@ -221,15 +218,28 @@ class Data_Analysis_Group(QWidget):
 		self.GroupBox = QGroupBox("Data Analysis")
 		self.Threshold = spinBlock("Threshold (mV)", Threshold_MIN, Threshold_MAX, "", "", False)
 		self.Noise = spinBlock("Width (points)", Noise_MIN, Noise_MAX, "", "", False)
+		self.LoadBtn = QPushButton("Load")
+		self.AnalyBtn = QPushButton("Analysis")
+		self.SaveBtn = QPushButton("Save Analysis")
+		#self.LoadBtn.setEnabled(False)
+		self.AnalyBtn.setEnabled(False)
+		self.SaveBtn.setEnabled(False)
+		self.Noise.spin.valueChanged.connect(lambda:self.NoiseChange())
 
 	def SubBlockWidget(self):
 		layout = QHBoxLayout()
 		layout.addWidget(self.Threshold.spinBlockWidget())
 		layout.addWidget(self.Noise.spinBlockWidget())
+		layout.addWidget(self.LoadBtn)
+		layout.addWidget(self.AnalyBtn)
+		layout.addWidget(self.SaveBtn)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
 		return self.GroupBox
+
+def NoiseChange(self):
+		self.AnalyBtn.setEnabled(True)
 
 class DC_Voltage_Group(QWidget):
 	def __init__(self, parent=None):
@@ -242,7 +252,7 @@ class DC_Voltage_Group(QWidget):
 		self.DC_Voltage2.SetBtn.setEnabled(False)
 
 	def SubBlockWidget(self):
-		layout = QVBoxLayout()
+		layout = QHBoxLayout()
 		layout.addWidget(self.DC_Voltage1.spinBlockWidget())
 		layout.addWidget(self.DC_Voltage2.spinBlockWidget())
 		#self.setLayout(layout)
@@ -269,18 +279,16 @@ class Integrator_Group(QWidget):
 	def __init__(self, parent=None):
 		super(Integrator_Group, self).__init__(parent)
 		self.GroupBox = QGroupBox("Integrator Group")
-		#self.ResetCycle = spinBlock("Reset Cycle", CYCLE_MIN, CYCLE_MAX, "Reset Time =", "0 (ms)", False)
-		#self.HoldCycle = spinBlock("Hold Cycle", CYCLE_MIN, CYCLE_MAX, "Hold Time =", "0 (ms)", False)
-		self.IntCycle = spinBlock("Int Cycle (ms)", INT_CYCLE_MIN, INT_CYCLE_MAX, "", "", False)
-		self.none = QLabel("")
+		self.ResetCycle = spinBlock("Reset Cycle", CYCLE_MIN, CYCLE_MAX, "Reset Time =", "0 (ms)", False)
+		self.HoldCycle = spinBlock("Hold Cycle", CYCLE_MIN, CYCLE_MAX, "Hold Time =", "0 (ms)", False)
+		self.IntCycle = spinBlock("Int Cycle", INT_CYCLE_MIN, INT_CYCLE_MAX, "Int Time =", "0 (ms)", False)
 		#self.SubBlockWidget()
 
 	def SubBlockWidget(self):
 		layout = QHBoxLayout()
-		#layout.addWidget(self.ResetCycle.spinBlockWidget())
-		#layout.addWidget(self.HoldCycle.spinBlockWidget())
+		layout.addWidget(self.ResetCycle.spinBlockWidget())
+		layout.addWidget(self.HoldCycle.spinBlockWidget())
 		layout.addWidget(self.IntCycle.spinBlockWidget())
-		layout.addWidget(self.none)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
@@ -300,10 +308,10 @@ class connectBlock():
 		self.connectStatus.setText("Connect first !")
 
 	def connectBlockWidget(self):   
-		connectLayout = QGridLayout()
-		connectLayout.addWidget(self.connectIP,0,0,1,2)
-		connectLayout.addWidget(self.connectBtn,0,2,1,1)
-		connectLayout.addWidget(self.connectStatus,1,0,1,3)
+		connectLayout = QVBoxLayout()
+		connectLayout.addWidget(self.connectIP)
+		connectLayout.addWidget(self.connectStatus)
+		connectLayout.addWidget(self.connectBtn)
 		self.connectGroupBox.setLayout(connectLayout)
 		self.connectGroupBox.show()
 		return self.connectGroupBox
@@ -313,34 +321,58 @@ class msTabSetting(QTabWidget):
 		super(msTabSetting, self).__init__(parent)
 		self.tab1 = QWidget()
 		self.tab2 = QWidget()
-		self.addTab(self.tab1,"Voltage Setting")
-		self.addTab(self.tab2,"Data Sampling and Analysis")
+		self.tab3 = QWidget()
+		self.tab4 = QWidget()
+		self.tab5 = QWidget()
+		self.addTab(self.tab1,"High Voltage Setting")
+		self.addTab(self.tab2,"DC Voltage Setting")
+		self.addTab(self.tab3,"Data Sampling and Fan")
+		self.addTab(self.tab4,"Gain Setting")
+		self.addTab(self.tab5,"Data Analysis")
 
 		#Tab1
 		self.HVScan = HVScan_Group()
-		self.DC_Voltage = DC_Voltage_Group()
-		self.Fan_Control = Fan_Control_Group()
 		#Tab2
+		self.DC_Voltage = DC_Voltage_Group()
+		#Tab3
 		self.Data_Sampling = Data_Sampling_Group()
+		self.Fan_Control = Fan_Control_Group()
+		#Tab4
 		self.Integrator = Integrator_Group()
+		#Tab5
 		self.Data_Analysis = Data_Analysis_Group()
 
 		self.Tab1UI()
 		self.Tab2UI()
+		self.Tab3UI()
+		self.Tab4UI()
+		self.Tab5UI()
 
 	def Tab1UI(self):
-		tablayout = QVBoxLayout()
+		tablayout = QHBoxLayout()
 		tablayout.addWidget(self.HVScan.SubBlockWidget())
-		tablayout.addWidget(self.DC_Voltage.SubBlockWidget())
-		tablayout.addWidget(self.Fan_Control.SubBlockWidget())
 		self.tab1.setLayout(tablayout)
 
 	def Tab2UI(self):
-		tablayout = QVBoxLayout()
-		tablayout.addWidget(self.Data_Sampling.SubBlockWidget())
-		tablayout.addWidget(self.Integrator.SubBlockWidget())
-		tablayout.addWidget(self.Data_Analysis.SubBlockWidget())
+		tablayout = QHBoxLayout()
+		tablayout.addWidget(self.DC_Voltage.SubBlockWidget())
 		self.tab2.setLayout(tablayout)
+
+	def Tab3UI(self):
+		tablayout = QHBoxLayout()
+		tablayout.addWidget(self.Data_Sampling.SubBlockWidget())
+		tablayout.addWidget(self.Fan_Control.SubBlockWidget())
+		self.tab3.setLayout(tablayout)
+
+	def Tab4UI(self):
+		tablayout = QHBoxLayout()
+		tablayout.addWidget(self.Integrator.SubBlockWidget())
+		self.tab4.setLayout(tablayout)
+
+	def Tab5UI(self):
+		tablayout = QHBoxLayout()
+		tablayout.addWidget(self.Data_Analysis.SubBlockWidget())
+		self.tab5.setLayout(tablayout)
 
 
 class mainWindow(QMainWindow):
@@ -353,25 +385,13 @@ class mainWindow(QMainWindow):
 		self.ip = connectBlock()
 		self.Signal_Read = Signal_Read_Group()
 		self.plot = outputPlot()
-		self.plot2 = outputPlot()
 		self.DCmode = QPushButton("DC mode")	# 2019.5.7
 		self.StartBtn = QPushButton("Start Scan")
 		#self.StopBtn = QPushButton("Stop")
-		self.LoadBtn = QPushButton("Load")
-		self.AnalyBtn = QPushButton("Analysis")
-		self.SaveAnaBtn = QPushButton("Save Analysis")
-		w = QWidget()
-		self.picout = QLabel(w)
-		lg = QPixmap(LOGO_FILENAME)
-		logo = lg.scaled(500, 90, Qt.KeepAspectRatio)
-		self.picout.setPixmap(logo)
 
 		self.DCmode.setEnabled(False)
 		self.StartBtn.setEnabled(False)
 		#self.StopBtn.setEnabled(False)
-		#self.LoadBtn.setEnabled(False)
-		self.AnalyBtn.setEnabled(False)
-		self.SaveAnaBtn.setEnabled(False)
 
 		self.SettingData = [0 for i in range(0, 13)]
 		self.LoadPreset()
@@ -403,56 +423,42 @@ class mainWindow(QMainWindow):
 		self.ms.FanSpeedFlag = False
 
 		#Signal_Read
-		self.Signal_Read.SaveDataBtn.clicked.connect(lambda:self.SaveData())
+		self.Signal_Read.SaveBtn.clicked.connect(lambda:self.SaveData())
 		self.data = []
 		self.dv = []
 
 		#Data_Analysis
-		self.LoadBtn.clicked.connect(lambda:self.LoadData())
-		self.AnalyBtn.clicked.connect(lambda:self.AnalysisData())
-		self.SaveAnaBtn.clicked.connect(lambda:self.SaveAnaData())
+		self.ms.Data_Analysis.LoadBtn.clicked.connect(lambda:self.LoadData())
+		self.ms.Data_Analysis.AnalyBtn.clicked.connect(lambda:self.AnalysisData())
+		self.ms.Data_Analysis.SaveBtn.clicked.connect(lambda:self.SaveAnaData())
 		self.ms.Data_Analysis.Threshold.spin.valueChanged.connect(lambda:self.ShowThreshold())
-		self.ms.Data_Analysis.Noise.spin.valueChanged.connect(lambda:self.NoiseChange())
-		self.data2 = []
-		self.dv2 = []
 		self.analist = []
 
-		#self.ms.Integrator.ResetCycle.spin.valueChanged.connect(lambda:self.ShowResetCycle())
-		#self.ms.Integrator.HoldCycle.spin.valueChanged.connect(lambda:self.ShowHoldCycle())
-		#self.ms.Integrator.IntCycle.spin.valueChanged.connect(lambda:self.ShowIntCycle())
+		self.ms.Integrator.ResetCycle.spin.valueChanged.connect(lambda:self.ShowResetCycle())
+		self.ms.Integrator.HoldCycle.spin.valueChanged.connect(lambda:self.ShowHoldCycle())
+		self.ms.Integrator.IntCycle.spin.valueChanged.connect(lambda:self.ShowIntCycle())
 
 		#ExitProg
 		#self.Signal_Read.ExitBtn.clicked.connect(lambda:self.ExitProg())
 
 	def main_UI(self):
 		mainLayout = QGridLayout()
-		mainLayout.addWidget(self.plot,0,0,5,1)
-		mainLayout.addWidget(self.plot2,5,0,7,1)
-		mainLayout.addWidget(self.ip.connectBlockWidget(),0,1,1,3)
-		mainLayout.addWidget(self.ms,1,1,6,3)
-		mainLayout.addWidget(self.DCmode,7,1,1,1)
-		mainLayout.addWidget(self.StartBtn,7,2,1,1)
-		mainLayout.addWidget(self.Signal_Read.SubBlockWidget(),8,1,2,3)
-		mainLayout.addWidget(self.LoadBtn,10,1,1,1)
-		mainLayout.addWidget(self.AnalyBtn,10,2,1,1)
-		mainLayout.addWidget(self.SaveAnaBtn,10,3,1,1)
-		mainLayout.addWidget(self.picout,11,1,1,3)
+		mainLayout.addWidget(self.ms,0,0,2,4)
+		mainLayout.addWidget(self.DCmode,0,4,1,1)
+		mainLayout.addWidget(self.StartBtn,1,4,1,1)
+		mainLayout.addWidget(self.Signal_Read.SubBlockWidget(),0,5,2,1)
+		mainLayout.addWidget(self.ip.connectBlockWidget(),0,6,2,1)
+		mainLayout.addWidget(self.plot,2,0,1,7)
 		mainLayout.setRowStretch(0, 1)
 		mainLayout.setRowStretch(1, 1)
-		mainLayout.setRowStretch(2, 1)
-		mainLayout.setRowStretch(3, 1)
-		mainLayout.setRowStretch(4, 1)
-		mainLayout.setRowStretch(5, 1)
-		mainLayout.setRowStretch(6, 1)
-		mainLayout.setRowStretch(7, 1)
-		mainLayout.setRowStretch(8, 1)
-		mainLayout.setRowStretch(9, 1)
-		mainLayout.setRowStretch(10, 1)
-		mainLayout.setRowStretch(11, 1)
-		mainLayout.setColumnStretch(0, 8)
+		mainLayout.setRowStretch(2, 8)
+		mainLayout.setColumnStretch(0, 1)
 		mainLayout.setColumnStretch(1, 1)
 		mainLayout.setColumnStretch(2, 1)
 		mainLayout.setColumnStretch(3, 1)
+		mainLayout.setColumnStretch(4, 1)
+		mainLayout.setColumnStretch(5, 1)
+		mainLayout.setColumnStretch(6, 1)
 		self.setCentralWidget(QWidget(self))
 		self.centralWidget().setLayout(mainLayout)
 
@@ -473,8 +479,8 @@ class mainWindow(QMainWindow):
 		self.ms.Fan_Control.Fan_Speed.spin.setValue(int(self.SettingData[7]))
 		self.ms.Data_Sampling.MV_Number.spin.setValue(int(self.SettingData[8]))
 		self.ms.Data_Sampling.AVG_time.spin.setValue(int(self.SettingData[9]))
-		#self.ms.Integrator.ResetCycle.spin.setValue(int(self.SettingData[10]))
-		#self.ms.Integrator.HoldCycle.spin.setValue(int(self.SettingData[11]))
+		self.ms.Integrator.ResetCycle.spin.setValue(int(self.SettingData[10]))
+		self.ms.Integrator.HoldCycle.spin.setValue(int(self.SettingData[11]))
 		self.ms.Integrator.IntCycle.spin.setValue(int(self.SettingData[12]))
 
 #connect
@@ -522,48 +528,46 @@ class mainWindow(QMainWindow):
 				self.ms.Fan_Control.Fan_Speed.SetBtn.setEnabled(True)
 
 #DCmode
-	# def ShowResetCycle(self):
-	# 	TempCycleValue = self.ms.Integrator.ResetCycle.spin.value()
-	# 	CycleValue = float(TempCycleValue) * CYCLE_CONST
-	# 	CycleText = str(CycleValue) + ' (ms)'
-	# 	self.ms.Integrator.ResetCycle.value.setText(CycleText)
+	def ShowResetCycle(self):
+		TempCycleValue = self.ms.Integrator.ResetCycle.spin.value()
+		CycleValue = float(TempCycleValue) * CYCLE_CONST
+		CycleText = str(CycleValue) + ' (ms)'
+		self.ms.Integrator.ResetCycle.value.setText(CycleText)
 
-	# def ShowHoldCycle(self):
-	# 	TempCycleValue = self.ms.Integrator.HoldCycle.spin.value()
-	# 	CycleValue = float(TempCycleValue) * CYCLE_CONST
-	# 	CycleText = str(CycleValue) + ' (ms)'
-	# 	self.ms.Integrator.HoldCycle.value.setText(CycleText)
+	def ShowHoldCycle(self):
+		TempCycleValue = self.ms.Integrator.HoldCycle.spin.value()
+		CycleValue = float(TempCycleValue) * CYCLE_CONST
+		CycleText = str(CycleValue) + ' (ms)'
+		self.ms.Integrator.HoldCycle.value.setText(CycleText)
 
-	# def ShowIntCycle(self):
-	# 	TempCycleValue = self.ms.Integrator.IntCycle.spin.value()
-	# 	CycleValue = float(TempCycleValue) * CYCLE_CONST
-	# 	CycleText = str(CycleValue) + ' (ms)'
-	# 	self.ms.Integrator.IntCycle.value.setText(CycleText)
+	def ShowIntCycle(self):
+		TempCycleValue = self.ms.Integrator.IntCycle.spin.value()
+		CycleValue = float(TempCycleValue) * CYCLE_CONST
+		CycleText = str(CycleValue) + ' (ms)'
+		self.ms.Integrator.IntCycle.value.setText(CycleText)
 
 	def SetCycle(self):
-		#cmd = RESET_CYCLE_CMD + str(self.SettingData[10])
-		cmd = RESET_CYCLE_CMD + "125000"
+		cmd = RESET_CYCLE_CMD + str(self.SettingData[10])
 		#print cmd
 		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-		#self.ShowResetCycle()
+		self.ShowResetCycle()
 
-		#cmd = HOLD_CYCLE_CMD + str(self.SettingData[11])
-		cmd = HOLD_CYCLE_CMD + "125000"
+		cmd = HOLD_CYCLE_CMD + str(self.SettingData[11])
 		#print cmd
 		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-		#self.ShowHoldCycle()
+		self.ShowHoldCycle()
 
-		cmd = INT_CYCLE_CMD + str(int(self.SettingData[12])*CYCLE_CONST)
+		cmd = INT_CYCLE_CMD + str(self.SettingData[12])
 		#print cmd
 		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-		#self.ShowIntCycle()
+		self.ShowIntCycle()
 
 
 	def DCmode(self):	# 2019.5.7
 		startValue = self.ms.HVScan.StartVoltage.spin.value()
 		self.SettingData[1] = startValue
-		#self.SettingData[10] = self.ms.Integrator.ResetCycle.spin.value()
-		#self.SettingData[11] = self.ms.Integrator.HoldCycle.spin.value()
+		self.SettingData[10] = self.ms.Integrator.ResetCycle.spin.value()
+		self.SettingData[11] = self.ms.Integrator.HoldCycle.spin.value()
 		self.SettingData[12] = self.ms.Integrator.IntCycle.spin.value()
 		#print(self.SettingData)
 		SettingData = [str(line) + '\n' for line in self.SettingData] 
@@ -657,15 +661,13 @@ class mainWindow(QMainWindow):
 						SR_read = SR_read_Total / AVG_time_value
 
 						if (i >= 0):	# 2019.5.7
-								self.data.append(SR_read*(-1000))
+								self.data.append(SR_read)
 								if (self.HVScanFlag == True):
 										self.dv.append(i*stepValue + startValue - Fix_Vol_value)
 								else:
 										self.dv.append(i)
 
 						self.plot.ax.clear()
-						self.plot.ax.set_xlabel("delta V")
-						self.plot.ax.set_ylabel("Voltage Output (mV)")
 						self.plot.ax.plot(self.dv,self.data, '-')
 						self.plot.canvas.draw()
 						self.Signal_Read.text.setText(str("%2.4f"%SR_read))
@@ -707,8 +709,8 @@ class mainWindow(QMainWindow):
 		self.SettingData[7] = self.ms.Fan_Control.Fan_Speed.spin.value()
 		self.SettingData[8] = self.ms.Data_Sampling.MV_Number.spin.value()
 		self.SettingData[9] = self.ms.Data_Sampling.AVG_time.spin.value()
-		#self.SettingData[10] = self.ms.Integrator.ResetCycle.spin.value()
-		#self.SettingData[11] = self.ms.Integrator.HoldCycle.spin.value()
+		self.SettingData[10] = self.ms.Integrator.ResetCycle.spin.value()
+		self.SettingData[11] = self.ms.Integrator.HoldCycle.spin.value()
 		self.SettingData[12] = self.ms.Integrator.IntCycle.spin.value()
 		#print(self.SettingData)
 		SettingData = [str(line) + '\n' for line in self.SettingData] 
@@ -747,7 +749,7 @@ class mainWindow(QMainWindow):
 # 	self.DCmode.setEnabled(True)
 # 	self.StartBtn.setEnabled(True)
 # 	#self.StopBtn.setEnabled(False)
-# 	self.Signal_Read.SaveDataBtn.setEnabled(True)
+# 	self.Signal_Read.SaveBtn.setEnabled(True)
 # 	self.Data_Analysis.AnalyBtn.setEnabled(True)
 
 
@@ -804,48 +806,39 @@ class mainWindow(QMainWindow):
 
 #Data_Analysis
 	def LoadData(self):
-		self.data2 = []
-		self.dv2 = []
-		data2max = 0
-		data2min = 0
+		self.data = []
+		self.dv = []
 		OpenFileName = QFileDialog.getOpenFileName(self,"Load Signal Data","","Text Files (*.txt)")
 		if os.path.exists(OpenFileName):
 				temp = [line.rstrip('\n') for line in open(OpenFileName)]
 				for a in temp:
 						b = a.split(',')
-						self.dv2.append(float(b[0]))
-						self.data2.append(float(b[1]))
-				data2max = max(self.data2)
-				data2min = min(self.data2)
-				self.ms.Data_Analysis.Threshold.spin.setRange(data2min, data2max)
-				self.plot2.ax.clear()
-				self.plot2.ax.set_xlabel("delta V")
-				self.plot2.ax.set_ylabel("Voltage Output (mV)")
-				self.plot2.ax.plot(self.dv2,self.data2, '-')
-				self.plot2.canvas.draw()
-				self.AnalyBtn.setEnabled(True)
+						self.dv.append(float(b[0]))
+						self.data.append(float(b[1]))
+				self.plot.ax.clear()
+				self.plot.ax.plot(self.dv,self.data, '-')
+				self.plot.canvas.draw()
+				self.ms.Data_Analysis.AnalyBtn.setEnabled(True)
 
 	def AnalysisData(self):
-		value1 = float(self.ms.Data_Analysis.Threshold.spin.value())
+		value1 = float(self.ms.Data_Analysis.Threshold.spin.value() / 1000.0)
 		value2 = float(self.ms.Data_Analysis.Noise.spin.value())
 
-		peaks, _= find_peaks(self.data2, height = value1, width = value2)
+		peaks, _= find_peaks(self.data, height = value1, width = value2)
 		#print peaks
 		peak_num = len(peaks)
-		results_half = peak_widths(self.data2, peaks, rel_height = 0.5)
+		results_half = peak_widths(self.data, peaks, rel_height = 0.5)
 		#print results_half
 
-		self.plot2.ax.clear()
-		self.plot2.ax.set_xlabel("delta V")
-		self.plot2.ax.set_ylabel("Voltage Output (mV)")
-		self.plot2.ax.plot(self.dv2,self.data2, '-')
-		self.plot2.canvas.draw()
+		self.plot.ax.clear()
+		self.plot.ax.plot(self.dv,self.data, '-')
+		self.plot.canvas.draw()
 
 		self.analist = []
 		for index in peaks:
-				xvalue = self.dv2[index]
+				xvalue = self.dv[index]
 				self.analist.append(xvalue)
-				yvalue = self.data2[index]
+				yvalue = self.data[index]
 				self.analist.append(yvalue)
 				#ratio = yvalue / xvalue
 				#list.append(ratio)
@@ -859,13 +852,13 @@ class mainWindow(QMainWindow):
 				yvalue = self.analist[3*i+1]
 				#ratio = yvalue / deltax
 				ratio = xvalue / deltax
-				self.plot2.ax.axvline(x=xvalue, color='k')
-				self.plot2.ax.text(xvalue, yvalue, str("%2.3f" %ratio), fontsize=12)
-				self.plot2.canvas.draw()
+				self.plot.ax.axvline(x=xvalue, color='k')
+				self.plot.ax.text(xvalue, yvalue, str("%2.3f" %ratio), fontsize=12)
+				self.plot.canvas.draw()
 
 		#print self.analist
-		self.AnalyBtn.setEnabled(False)
-		self.SaveAnaBtn.setEnabled(True)
+		self.ms.Data_Analysis.AnalyBtn.setEnabled(False)
+		self.ms.Data_Analysis.SaveBtn.setEnabled(True)
 
 	def SaveAnaData(self):
 		SaveFileName = QFileDialog.getSaveFileName(self,"Save Analysis Data",ANALYSIS_FILENAME,"Text Files (*.txt)")
@@ -881,21 +874,15 @@ class mainWindow(QMainWindow):
 						fo.write(str("%2.4f" %self.analist[i]))
 				fo.write("\n")
 				fo.close()
-				self.SaveAnaBtn.setEnabled(False)
+				self.ms.Data_Analysis.SaveBtn.setEnabled(False)
 
 	def ShowThreshold(self):
-		value = float(self.ms.Data_Analysis.Threshold.spin.value())
-		self.plot2.ax.clear()
-		self.plot2.ax.set_xlabel("delta V")
-		self.plot2.ax.set_ylabel("Voltage Output (mV)")
-		self.plot2.ax.plot(self.dv2, self.data2, '-')
-		self.plot2.ax.axhline(y=value, color='r')
-		self.plot2.canvas.draw()
-		self.AnalyBtn.setEnabled(True)
-
-	def NoiseChange(self):
-		self.AnalyBtn.setEnabled(True)
-
+		value = float(self.ms.Data_Analysis.Threshold.spin.value() / 1000.0)
+		self.plot.ax.clear()
+		self.plot.ax.plot(self.dv, self.data, '-')
+		self.plot.ax.axhline(y=value, color='r')
+		self.plot.canvas.draw()
+		self.ms.Data_Analysis.AnalyBtn.setEnabled(True)
 
 #	def ExitProg(self):
 #                self.FanSpeedFlag = False
