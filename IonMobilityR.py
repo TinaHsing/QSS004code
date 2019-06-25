@@ -136,13 +136,13 @@ class outputPlot(QWidget):
 		#layout.addWidget(picout,1,1,1,1)
 		self.setLayout(layout)
 		self.ax = self.figure.add_subplot(111)
-		self.ax.set_xlabel("delta V")
+		self.ax.set_xlabel("dV (V)")
 		self.ax.set_ylabel("Voltage Output (mV)")
 
 class Signal_Read_Group(QWidget):
 	def __init__(self, parent=None):
 		super(Signal_Read_Group, self).__init__(parent)
-		self.GroupBox = QGroupBox("Signal Read")
+		self.GroupBox = QGroupBox("Signal Read (mV)")
 		self.text = QLabel("0")
 		pe = QPalette()
 		pe.setColor(QPalette.WindowText,Qt.yellow)
@@ -403,7 +403,7 @@ class mainWindow(QMainWindow):
 		self.Signal_Read = Signal_Read_Group()
 		self.DCmode = QPushButton("DC mode")	# 2019.5.7
 		self.StartBtn = QPushButton("Start Scan")
-		#self.StopBtn = QPushButton("Stop")
+		self.StopBtn = QPushButton("Stop")
 		self.LoadBtn = QPushButton("Load")
 		self.AnalyBtn = QPushButton("Analysis")
 		self.SaveAnaBtn = QPushButton("Save Analysis")
@@ -415,7 +415,7 @@ class mainWindow(QMainWindow):
 
 		self.DCmode.setEnabled(False)
 		self.StartBtn.setEnabled(False)
-		#self.StopBtn.setEnabled(False)
+		self.StopBtn.setEnabled(False)
 		#self.LoadBtn.setEnabled(False)
 		self.AnalyBtn.setEnabled(False)
 		self.SaveAnaBtn.setEnabled(False)
@@ -434,9 +434,9 @@ class mainWindow(QMainWindow):
 		self.ip.connectBtn.clicked.connect(lambda:self.buildConnect())
 
 		#HVScan
-		self.DCmode.clicked.connect(lambda:self.DCmode())
+		self.DCmode.clicked.connect(lambda:self.RunDCmode())
 		self.StartBtn.clicked.connect(lambda:self.StartScan())
-		#self.StopBtn.clicked.connect(lambda:self.StopScan())
+		self.StopBtn.clicked.connect(lambda:self.StopScan())
 		#self.Vout1 = 0
 		#self.Vout2 = 0.0
 		self.DCmodeFlag = False
@@ -475,8 +475,6 @@ class mainWindow(QMainWindow):
 		self.ms.Integrator.vText3.valueChanged.connect(lambda:self.IntVoltageChange3())
 		#self.ms.Integrator.vText4.valueChanged.connect(lambda:self.IntVoltageChange())
 
-		#ExitProg
-		#self.Signal_Read.ExitBtn.clicked.connect(lambda:self.ExitProg())
 
 	def main_UI(self):
 		mainLayout = QGridLayout()
@@ -485,6 +483,7 @@ class mainWindow(QMainWindow):
 		mainLayout.addWidget(self.ms,1,1,6,3)
 		mainLayout.addWidget(self.DCmode,7,1,1,1)
 		mainLayout.addWidget(self.StartBtn,7,2,1,1)
+		mainLayout.addWidget(self.StopBtn,7,3,1,1)
 		mainLayout.addWidget(self.Signal_Read.SubBlockWidget(),8,1,2,3)
 		mainLayout.addWidget(self.LoadBtn,10,1,1,1)
 		mainLayout.addWidget(self.AnalyBtn,10,2,1,1)
@@ -515,7 +514,7 @@ class mainWindow(QMainWindow):
 
 	def LoadPreset(self):
 		if os.path.exists(SETTING_FILENAME):
-				self.SettingData = [line.rstrip('\n') for line in open(SETTING_FILENAME)]
+			self.SettingData = [line.rstrip('\n') for line in open(SETTING_FILENAME)]
 		self.ip.connectIP.setText(str(self.SettingData[0]))
 		self.ms.HVScan.StartVoltage.spin.setValue(int(self.SettingData[1]))
 		self.ms.HVScan.VoltageStep.spin.setValue(int(self.SettingData[2]))
@@ -535,46 +534,45 @@ class mainWindow(QMainWindow):
 		self.ip.host = "rp-"+str(self.ip.connectIP.text())+".local"
 		#print self.ip.host
 		try:
-				self.ip.ssh.connect(self.ip.host, HOST_PORT, HOST_NAME, HOST_PWD)
+			self.ip.ssh.connect(self.ip.host, HOST_PORT, HOST_NAME, HOST_PWD)
 		except:
-				self.ip.connectStatus.setText("SSH connection failed")
-				self.ip.connectStatus.show()
+			self.ip.connectStatus.setText("SSH connection failed")
+			self.ip.connectStatus.show()
 		else:
-				stdin, stdout, stderr = self.ip.ssh.exec_command('cat /root/int_GB.bit > /dev/xdevcfg')
-				stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 1 0')
-				stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 2 0')
-				stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 3 0')
-				stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 4 0')
-				stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 5 0')
-				stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 6 0')
-				stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 7 0')
-				stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 8 0')
-				stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 9 0')
-				stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 10 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('cat /root/int_GB.bit > /dev/xdevcfg')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 1 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 2 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 3 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 4 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 5 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 6 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 7 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 8 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 9 0')
+			stdin, stdout, stderr = self.ip.ssh.exec_command('LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 10 0')
 
-				self.SettingData[0] = self.ip.connectIP.text()
-				#print(self.SettingData)
-				SettingData = [str(line) + '\n' for line in self.SettingData] 
-				if not os.path.isdir(SETTING_FILEPATH):
-						os.mkdir(SETTING_FILEPATH)
-				fo = open(SETTING_FILENAME, "w+")
-				fo.writelines(SettingData)
-				fo.close()
+			self.SettingData[0] = self.ip.connectIP.text()
+			#print(self.SettingData)
+			SettingData = [str(line) + '\n' for line in self.SettingData] 
+			if not os.path.isdir(SETTING_FILEPATH):
+				os.mkdir(SETTING_FILEPATH)
+			fo = open(SETTING_FILENAME, "w+")
+			fo.writelines(SettingData)
+			fo.close()
 
-				pe = QPalette()
-				pe.setColor(QPalette.WindowText,Qt.black)
-				self.ip.connectStatus.setPalette(pe)
-				self.ip.connectStatus.setText("Connection build")
-				self.ip.connectStatus.show()
-				self.ip.connectBtn.setEnabled(False)
-				self.DCmode.setEnabled(True)
-				self.StartBtn.setEnabled(True)
-				#self.StopBtn.setEnabled(True)
-				self.ms.DC_Voltage.DC_Voltage1.SetBtn.setEnabled(True)
-				self.ms.DC_Voltage.DC_Voltage2.SetBtn.setEnabled(True)
-				self.ms.Fan_Control.Fan_Speed.SetBtn.setEnabled(True)
+			pe = QPalette()
+			pe.setColor(QPalette.WindowText,Qt.black)
+			self.ip.connectStatus.setPalette(pe)
+			self.ip.connectStatus.setText("Connection build")
+			self.ip.connectStatus.show()
+			self.ip.connectBtn.setEnabled(False)
+			self.DCmode.setEnabled(True)
+			self.StartBtn.setEnabled(True)
+			self.StopBtn.setEnabled(True)
+			self.ms.DC_Voltage.DC_Voltage1.SetBtn.setEnabled(True)
+			self.ms.DC_Voltage.DC_Voltage2.SetBtn.setEnabled(True)
+			self.ms.Fan_Control.Fan_Speed.SetBtn.setEnabled(True)
 
-#DCmode
 	# def ShowResetCycle(self):
 	# 	TempCycleValue = self.ms.Integrator.ResetCycle.spin.value()
 	# 	CycleValue = float(TempCycleValue) * CYCLE_CONST
@@ -614,7 +612,8 @@ class mainWindow(QMainWindow):
 		#self.ShowIntCycle()
 
 
-	def DCmode(self):	# 2019.5.7
+#DCmode
+	def RunDCmode(self):	# 2019.5.7
 		startValue = self.ms.HVScan.StartVoltage.spin.value()
 		self.SettingData[1] = startValue
 		#self.SettingData[10] = self.ms.Integrator.ResetCycle.spin.value()
@@ -644,7 +643,7 @@ class mainWindow(QMainWindow):
 		self.data = []
 		self.DCmode.setEnabled(False)
 		self.StartBtn.setEnabled(False)
-		#self.StopBtn.setEnabled(True)
+		self.StopBtn.setEnabled(True)
 
 #Integrator
 	def IntVoltageChange2(self):
@@ -707,7 +706,7 @@ class mainWindow(QMainWindow):
 
 	def VoltageOut(self):
 		#TD_value_float = float(self.HVScan.TimeDelay.spin.value()/1000.0)
-		if self.Setting.radioBtn2.isChecked():
+		if self.ms.Data_Sampling.radioBtn2.isChecked():
 			Channel_str = '1 '
 		else:
 			Channel_str = '0 '
@@ -716,9 +715,9 @@ class mainWindow(QMainWindow):
 		Fix_Vol_value = self.ms.DC_Voltage.DC_Voltage1.spin.value()
 		#i = 0	# 2019.5.7
 		if (self.HVScanFlag == True):
-				i = -3
+			i = -3
 		else:
-				i = 0
+			i = 0
 		loopValue = self.ms.HVScan.Loop.spin.value()
 		startValue = self.ms.HVScan.StartVoltage.spin.value()
 		stepValue = float(self.ms.HVScan.VoltageStep.spin.value())/1000.0
@@ -750,13 +749,13 @@ class mainWindow(QMainWindow):
 						stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 
 					if (Vout1 == voltage3) and (self.ms.Integrator.vText3.isEnabled):
-						gValue3 = self.ms.Integrator.gValue2.value() * CYCLE_CONST
+						gValue3 = self.ms.Integrator.gValue3.value() * CYCLE_CONST
 						cmd = INT_CYCLE_CMD + str(gValue3)
 						#print cmd
 						stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 
 					if (Vout1 == voltage4) and (self.ms.Integrator.vText4.isEnabled):
-						gValue4 = self.ms.Integrator.gValue2.value() * CYCLE_CONST
+						gValue4 = self.ms.Integrator.gValue4.value() * CYCLE_CONST
 						cmd = INT_CYCLE_CMD + str(gValue4)
 						#print cmd
 						stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
@@ -790,17 +789,20 @@ class mainWindow(QMainWindow):
 						#print "for j " + str(j) + " : " + str(SR_read)
 					SR_read_Total = SR_read_Total + SR_read
 				#print "while i " + str(i) + " : " + str(SR_read_Total)
-				SR_read = SR_read_Total / AVG_time_value
+				SR_read = SR_read_Total / AVG_time_value * (-1000)
 
 				if (i >= 0):	# 2019.5.7
-					self.data.append(SR_read*(-1000))
+					self.data.append(SR_read)
 					if (self.HVScanFlag == True):
 						self.dv.append(i*stepValue + startValue - Fix_Vol_value)
-					else:
+					else: #DCmode
 						self.dv.append(i)
 
 				self.pic.plot.ax.clear()
-				self.pic.plot.ax.set_xlabel("delta V")
+				if (self.HVScanFlag == True):
+					self.pic.plot.ax.set_xlabel("dV (V)")
+				else: #DCmode
+					self.pic.plot.ax.set_xlabel("index")
 				self.pic.plot.ax.set_ylabel("Voltage Output (mV)")
 				self.pic.plot.ax.plot(self.dv,self.data, '-')
 				self.pic.plot.canvas.draw()
@@ -834,7 +836,7 @@ class mainWindow(QMainWindow):
 		self.SettingData[2] = self.ms.HVScan.VoltageStep.spin.value()
 		self.SettingData[3] = self.ms.HVScan.Loop.spin.value()
 		#self.SettingData[4] = self.HVScan.TimeDelay.spin.value()
-		if self.Setting.radioBtn2.isChecked():
+		if self.ms.Data_Sampling.radioBtn2.isChecked():
 			self.SettingData[4] = 1
 		else:
 			self.SettingData[4] = 0
@@ -849,7 +851,7 @@ class mainWindow(QMainWindow):
 		#print(self.SettingData)
 		SettingData = [str(line) + '\n' for line in self.SettingData] 
 		if not os.path.isdir(SETTING_FILEPATH):
-				os.mkdir(SETTING_FILEPATH)
+			os.mkdir(SETTING_FILEPATH)
 		fo = open(SETTING_FILENAME, "w+")
 		fo.writelines(SettingData)
 		fo.close()
@@ -862,17 +864,17 @@ class mainWindow(QMainWindow):
 		gt1.start()
 		self.DCmode.setEnabled(False)
 		self.StartBtn.setEnabled(False)
-		#self.StopBtn.setEnabled(True)
+		self.StopBtn.setEnabled(True)
 
 
 	def StopScan(self):
 		self.DCmodeFlag = False
 		self.HVScanFlag = False
-		val = self.HVScan.StartVoltage.spin.value()
-		self.HVScan.text2.setText(str(val)+" (V)")
+		val = self.ms.HVScan.StartVoltage.spin.value()
+		self.ms.HVScan.text2.setText(str(val)+" (V)")
 		#self.card.writeAoValue(0,float(val)*DAC_Constant_S5)
 		#stdin, stdout, stderr = self.ip.ssh.exec_command(DAC_SCAN_STOP)
-		startValue = self.HVScan.StartVoltage.spin.value()
+		startValue = self.ms.HVScan.StartVoltage.spin.value()
 		Vout1 = startValue
 		Vout2 = float(startValue) * DAC_Constant_S5
 		cmd = DAC_SCAN + str(Vout2)
@@ -882,9 +884,9 @@ class mainWindow(QMainWindow):
 		#self.card.enableCounter(False)
 		self.DCmode.setEnabled(True)
 		self.StartBtn.setEnabled(True)
-		#self.StopBtn.setEnabled(False)
-		self.ms.Signal_Read.SaveDataBtn.setEnabled(True)
-		self.ms.Data_Analysis.AnalyBtn.setEnabled(True)
+		self.StopBtn.setEnabled(False)
+		self.Signal_Read.SaveDataBtn.setEnabled(True)
+		self.AnalyBtn.setEnabled(True)
 
 
 #DC_Voltage
@@ -932,11 +934,11 @@ class mainWindow(QMainWindow):
 		#SaveData = [str(line) + '\n' for line in self.data] 
 		SaveFileName = QFileDialog.getSaveFileName(self,"Save Signal Data",READOUT_FILENAME,"Text Files (*.txt)")
 		if (SaveFileName != ''):
-				fo = open(SaveFileName, "w+")
-				number = len(self.data)
-				for i in range (0, number):
-						fo.write(str("%2.4f" %self.dv[i])+","+str("%2.4f" %self.data[i])+"\n")
-				fo.close()
+			fo = open(SaveFileName, "w+")
+			number = len(self.data)
+			for i in range (0, number):
+				fo.write(str("%2.4f" %self.dv[i])+","+str("%2.4f" %self.data[i])+"\n")
+			fo.close()
 
 #Data_Analysis
 	def LoadData(self):
@@ -946,20 +948,20 @@ class mainWindow(QMainWindow):
 		data2min = 0
 		OpenFileName = QFileDialog.getOpenFileName(self,"Load Signal Data","","Text Files (*.txt)")
 		if os.path.exists(OpenFileName):
-				temp = [line.rstrip('\n') for line in open(OpenFileName)]
-				for a in temp:
-						b = a.split(',')
-						self.dv2.append(float(b[0]))
-						self.data2.append(float(b[1]))
-				data2max = max(self.data2)
-				data2min = min(self.data2)
-				self.ms.Data_Analysis.Threshold.spin.setRange(data2min, data2max)
-				self.pic.plot2.ax.clear()
-				self.pic.plot2.ax.set_xlabel("delta V")
-				self.pic.plot2.ax.set_ylabel("Voltage Output (mV)")
-				self.pic.plot2.ax.plot(self.dv2,self.data2, '-')
-				self.pic.plot2.canvas.draw()
-				self.AnalyBtn.setEnabled(True)
+			temp = [line.rstrip('\n') for line in open(OpenFileName)]
+			for a in temp:
+				b = a.split(',')
+				self.dv2.append(float(b[0]))
+				self.data2.append(float(b[1]))
+			data2max = max(self.data2)
+			data2min = min(self.data2)
+			self.ms.Data_Analysis.Threshold.spin.setRange(data2min, data2max)
+			self.pic.plot2.ax.clear()
+			self.pic.plot2.ax.set_xlabel("dV (V)")
+			self.pic.plot2.ax.set_ylabel("Voltage Output (mV)")
+			self.pic.plot2.ax.plot(self.dv2,self.data2, '-')
+			self.pic.plot2.canvas.draw()
+			self.AnalyBtn.setEnabled(True)
 
 	def AnalysisData(self):
 		value1 = float(self.ms.Data_Analysis.Threshold.spin.value())
@@ -972,32 +974,34 @@ class mainWindow(QMainWindow):
 		#print results_half
 
 		self.pic.plot2.ax.clear()
-		self.pic.plot2.ax.set_xlabel("delta V")
+		self.pic.plot2.ax.set_xlabel("dV (V)")
 		self.pic.plot2.ax.set_ylabel("Voltage Output (mV)")
 		self.pic.plot2.ax.plot(self.dv2,self.data2, '-')
 		self.pic.plot2.canvas.draw()
 
 		self.analist = []
 		for index in peaks:
-				xvalue = self.dv2[index]
-				self.analist.append(xvalue)
-				yvalue = self.data2[index]
-				self.analist.append(yvalue)
-				#ratio = yvalue / xvalue
-				#list.append(ratio)
-				self.analist.append(0.0)
+			xvalue = self.dv2[index]
+			self.analist.append(xvalue)
+			yvalue = self.data2[index]
+			self.analist.append(yvalue)
+			#ratio = yvalue / xvalue
+			#list.append(ratio)
+			self.analist.append(0.0)
+			self.analist.append(0.0)
 
 		for i in xrange(0, peak_num):
-				#print results_half[0][i]
-				deltax = results_half[0][i]
-				self.analist[3*i+2] = deltax
-				xvalue = self.analist[3*i+0]
-				yvalue = self.analist[3*i+1]
-				#ratio = yvalue / deltax
-				ratio = xvalue / deltax
-				self.pic.plot2.ax.axvline(x=xvalue, color='k')
-				self.pic.plot2.ax.text(xvalue, yvalue, str("%2.3f" %ratio), fontsize=12)
-				self.pic.plot2.canvas.draw()
+			#print results_half[0][i]
+			deltax = results_half[0][i]
+			self.analist[3*i+2] = deltax
+			xvalue = self.analist[3*i+0]
+			yvalue = self.analist[3*i+1]
+			#ratio = yvalue / deltax
+			ratio = xvalue / deltax
+			self.analist[3*i+3] = ratio
+			self.pic.plot2.ax.axvline(x=xvalue, color='k')
+			self.pic.plot2.ax.text(xvalue, yvalue, str("%2.3f" %ratio), fontsize=12)
+			self.pic.plot2.canvas.draw()
 
 		#print self.analist
 		self.AnalyBtn.setEnabled(False)
@@ -1006,23 +1010,23 @@ class mainWindow(QMainWindow):
 	def SaveAnaData(self):
 		SaveFileName = QFileDialog.getSaveFileName(self,"Save Analysis Data",ANALYSIS_FILENAME,"Text Files (*.txt)")
 		if (SaveFileName != ''):
-				fo = open(SaveFileName, "w+")
-				number = len(self.analist)
-				fo.write("peak_X, peak_Y, width")
-				for i in range (0, number):
-						if (i % 3) == 0:
-								fo.write("\n")
-						else:
-								fo.write(", ")
-						fo.write(str("%2.4f" %self.analist[i]))
-				fo.write("\n")
-				fo.close()
-				self.SaveAnaBtn.setEnabled(False)
+			fo = open(SaveFileName, "w+")
+			number = len(self.analist)
+			fo.write("peak_X, peak_Y, width, ratio")
+			for i in range (0, number):
+				if (i % 4) == 0:
+					fo.write("\n")
+				else:
+					fo.write(", ")
+				fo.write(str("%2.4f" %self.analist[i]))
+			fo.write("\n")
+			fo.close()
+			self.SaveAnaBtn.setEnabled(False)
 
 	def ShowThreshold(self):
 		value = float(self.ms.Data_Analysis.Threshold.spin.value())
 		self.pic.plot2.ax.clear()
-		self.pic.plot2.ax.set_xlabel("delta V")
+		self.pic.plot2.ax.set_xlabel("dV (V)")
 		self.pic.plot2.ax.set_ylabel("Voltage Output (mV)")
 		self.pic.plot2.ax.plot(self.dv2, self.data2, '-')
 		self.pic.plot2.ax.axhline(y=value, color='r')
@@ -1031,16 +1035,6 @@ class mainWindow(QMainWindow):
 
 	def NoiseChange(self):
 		self.AnalyBtn.setEnabled(True)
-
-
-#	def ExitProg(self):
-#                self.FanSpeedFlag = False
-#                self.card.enableCounter(False)
-#                self.card.writeAoValue(0, 0)
-#                self.card.writeAoValue(1, 0)
-#                self.I2C.DacClose(I2C_DAC1_ADDRESS)
-#                self.I2C.DacClose(I2C_DAC2_ADDRESS)
-#                self.close()		
 		
 
 if __name__ == '__main__':
