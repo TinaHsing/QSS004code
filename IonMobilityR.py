@@ -37,7 +37,7 @@ DC_Voltage1_MIN = 0
 DC_Voltage1_MAX = 2000
 
 DC_Voltage2_MIN = 0
-DC_Voltage2_MAX = 4000
+DC_Voltage2_MAX = 5000
 
 Fan_Speed_MIN = 0
 Fan_Speed_MAX = 5000
@@ -206,10 +206,10 @@ class Data_Sampling_Group(QWidget):
 		frameLayout.addWidget(self.radioBtn2)
 		self.frame.setLayout(frameLayout)
 
-		layout = QGridLayout()
-		layout.addWidget(self.frame,0,0,1,2)
-		layout.addWidget(self.MV_Number.spinBlockWidget(),1,0,1,1)
-		layout.addWidget(self.AVG_time.spinBlockWidget(),1,1,1,1)
+		layout = QHBoxLayout()
+		layout.addWidget(self.frame)
+		layout.addWidget(self.MV_Number.spinBlockWidget())
+		layout.addWidget(self.AVG_time.spinBlockWidget())
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
@@ -271,20 +271,45 @@ class Integrator_Group(QWidget):
 		self.GroupBox = QGroupBox("Integrator Group")
 		#self.ResetCycle = spinBlock("Reset Cycle", CYCLE_MIN, CYCLE_MAX, "Reset Time =", "0 (ms)", False)
 		#self.HoldCycle = spinBlock("Hold Cycle", CYCLE_MIN, CYCLE_MAX, "Hold Time =", "0 (ms)", False)
-		self.IntCycle = spinBlock("Int Cycle (ms)", INT_CYCLE_MIN, INT_CYCLE_MAX, "", "", False)
-		self.none = QLabel("")
+		#self.IntCycle = spinBlock("Int Cycle (ms)", INT_CYCLE_MIN, INT_CYCLE_MAX, "", "", False)
+		self.vText0 = QLabel("Voltage (V)")
+		self.vText1 = QLabel("Start Voltage")
+		self.vText2 = QSpinBox()
+		self.vText3 = QSpinBox()
+		self.vText4 = QSpinBox()
+		self.vText5 = QLabel("Stop Voltage")
+		self.gText0 = QLabel("Int Cycle (ms)")
+		self.gValue1 = QSpinBox()
+		self.gValue2 = QSpinBox()
+		self.gValue3 = QSpinBox()
+		self.gValue4 = QSpinBox()
+		self.gValue1.setRange(INT_CYCLE_MIN, INT_CYCLE_MAX)
+		self.gValue2.setRange(INT_CYCLE_MIN, INT_CYCLE_MAX)
+		self.gValue3.setRange(INT_CYCLE_MIN, INT_CYCLE_MAX)
+		self.gValue4.setRange(INT_CYCLE_MIN, INT_CYCLE_MAX)
 		#self.SubBlockWidget()
 
 	def SubBlockWidget(self):
-		layout = QHBoxLayout()
+		layout = QGridLayout()
 		#layout.addWidget(self.ResetCycle.spinBlockWidget())
 		#layout.addWidget(self.HoldCycle.spinBlockWidget())
-		layout.addWidget(self.IntCycle.spinBlockWidget())
-		layout.addWidget(self.none)
+		#layout.addWidget(self.IntCycle.spinBlockWidget())
+		layout.addWidget(self.vText0,0,0,1,1)
+		layout.addWidget(self.vText1,1,0,1,1)
+		layout.addWidget(self.vText2,2,0,1,1)
+		layout.addWidget(self.vText3,3,0,1,1)
+		layout.addWidget(self.vText4,4,0,1,1)
+		layout.addWidget(self.vText5,5,0,1,1)
+		layout.addWidget(self.gText0,0,1,1,1)
+		layout.addWidget(self.gValue1,1,1,1,1)
+		layout.addWidget(self.gValue2,2,1,1,1)
+		layout.addWidget(self.gValue3,3,1,1,1)
+		layout.addWidget(self.gValue4,4,1,1,1)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
 		return self.GroupBox
+
 
 class connectBlock():
 	def __init__(self):
@@ -308,13 +333,36 @@ class connectBlock():
 		self.connectGroupBox.show()
 		return self.connectGroupBox
 
+class picTabSetting(QTabWidget):
+	def __init__(self, parent=None):
+		super(picTabSetting, self).__init__(parent)
+		self.picTab1 = QWidget()
+		self.picTab2 = QWidget()
+		self.addTab(self.picTab1,"Voltage Scan")
+		self.addTab(self.picTab2,"Data Analysis")
+		self.plot = outputPlot()
+		self.plot2 = outputPlot()
+		self.picTab1UI()
+		self.picTab2UI()
+
+	def picTab1UI(self):
+		piclayout = QVBoxLayout()
+		piclayout.addWidget(self.plot)
+		self.picTab1.setLayout(piclayout)
+
+	def picTab2UI(self):
+		piclayout = QVBoxLayout()
+		piclayout.addWidget(self.plot2)
+		self.picTab2.setLayout(piclayout)
+
+
 class msTabSetting(QTabWidget):
 	def __init__(self, parent=None):
 		super(msTabSetting, self).__init__(parent)
-		self.tab1 = QWidget()
-		self.tab2 = QWidget()
-		self.addTab(self.tab1,"Voltage Setting")
-		self.addTab(self.tab2,"Data Sampling and Analysis")
+		self.msTab1 = QWidget()
+		self.msTab2 = QWidget()
+		self.addTab(self.msTab1,"Voltage Setting")
+		self.addTab(self.msTab2,"Data Sampling and Analysis")
 
 		#Tab1
 		self.HVScan = HVScan_Group()
@@ -325,22 +373,22 @@ class msTabSetting(QTabWidget):
 		self.Integrator = Integrator_Group()
 		self.Data_Analysis = Data_Analysis_Group()
 
-		self.Tab1UI()
-		self.Tab2UI()
+		self.msTab1UI()
+		self.msTab2UI()
 
-	def Tab1UI(self):
+	def msTab1UI(self):
 		tablayout = QVBoxLayout()
 		tablayout.addWidget(self.HVScan.SubBlockWidget())
 		tablayout.addWidget(self.DC_Voltage.SubBlockWidget())
 		tablayout.addWidget(self.Fan_Control.SubBlockWidget())
-		self.tab1.setLayout(tablayout)
+		self.msTab1.setLayout(tablayout)
 
-	def Tab2UI(self):
+	def msTab2UI(self):
 		tablayout = QVBoxLayout()
 		tablayout.addWidget(self.Data_Sampling.SubBlockWidget())
 		tablayout.addWidget(self.Integrator.SubBlockWidget())
 		tablayout.addWidget(self.Data_Analysis.SubBlockWidget())
-		self.tab2.setLayout(tablayout)
+		self.msTab2.setLayout(tablayout)
 
 
 class mainWindow(QMainWindow):
@@ -349,11 +397,10 @@ class mainWindow(QMainWindow):
 		self.setWindowTitle(TITLE_TEXT)
 		self.resize(1280,840)
 		self.move(50,50)
+		self.pic = picTabSetting()
 		self.ms = msTabSetting()
 		self.ip = connectBlock()
 		self.Signal_Read = Signal_Read_Group()
-		self.plot = outputPlot()
-		self.plot2 = outputPlot()
 		self.DCmode = QPushButton("DC mode")	# 2019.5.7
 		self.StartBtn = QPushButton("Start Scan")
 		#self.StopBtn = QPushButton("Stop")
@@ -375,6 +422,7 @@ class mainWindow(QMainWindow):
 
 		self.SettingData = [0 for i in range(0, 13)]
 		self.LoadPreset()
+		self.VoltageChange()
 		menu_about = QAction("&Version", self)
 		menu_about.triggered.connect(self.aboutBox)
 		mainMenu = self.menuBar()
@@ -393,6 +441,9 @@ class mainWindow(QMainWindow):
 		#self.Vout2 = 0.0
 		self.DCmodeFlag = False
 		self.HVScanFlag = False
+		self.ms.HVScan.StartVoltage.spin.valueChanged.connect(lambda:self.VoltageChange())
+		self.ms.HVScan.VoltageStep.spin.valueChanged.connect(lambda:self.VoltageChange())
+		self.ms.HVScan.Loop.spin.valueChanged.connect(lambda:self.VoltageChange())
 
 		#DC_Voltage
 		self.ms.DC_Voltage.DC_Voltage1.SetBtn.clicked.connect(lambda:self.SetDC1())
@@ -420,14 +471,16 @@ class mainWindow(QMainWindow):
 		#self.ms.Integrator.ResetCycle.spin.valueChanged.connect(lambda:self.ShowResetCycle())
 		#self.ms.Integrator.HoldCycle.spin.valueChanged.connect(lambda:self.ShowHoldCycle())
 		#self.ms.Integrator.IntCycle.spin.valueChanged.connect(lambda:self.ShowIntCycle())
+		self.ms.Integrator.vText2.valueChanged.connect(lambda:self.IntVoltageChange2())
+		self.ms.Integrator.vText3.valueChanged.connect(lambda:self.IntVoltageChange3())
+		#self.ms.Integrator.vText4.valueChanged.connect(lambda:self.IntVoltageChange())
 
 		#ExitProg
 		#self.Signal_Read.ExitBtn.clicked.connect(lambda:self.ExitProg())
 
 	def main_UI(self):
 		mainLayout = QGridLayout()
-		mainLayout.addWidget(self.plot,0,0,5,1)
-		mainLayout.addWidget(self.plot2,5,0,7,1)
+		mainLayout.addWidget(self.pic,0,0,12,1)
 		mainLayout.addWidget(self.ip.connectBlockWidget(),0,1,1,3)
 		mainLayout.addWidget(self.ms,1,1,6,3)
 		mainLayout.addWidget(self.DCmode,7,1,1,1)
@@ -475,7 +528,7 @@ class mainWindow(QMainWindow):
 		self.ms.Data_Sampling.AVG_time.spin.setValue(int(self.SettingData[9]))
 		#self.ms.Integrator.ResetCycle.spin.setValue(int(self.SettingData[10]))
 		#self.ms.Integrator.HoldCycle.spin.setValue(int(self.SettingData[11]))
-		self.ms.Integrator.IntCycle.spin.setValue(int(self.SettingData[12]))
+		#self.ms.Integrator.IntCycle.spin.setValue(int(self.SettingData[12]))
 
 #connect
 	def buildConnect(self):
@@ -553,7 +606,9 @@ class mainWindow(QMainWindow):
 		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 		#self.ShowHoldCycle()
 
-		cmd = INT_CYCLE_CMD + str(int(self.SettingData[12])*CYCLE_CONST)
+		#cmd = INT_CYCLE_CMD + str(int(self.SettingData[12])*CYCLE_CONST)
+		gValue1 = self.ms.Integrator.gValue1.value() * CYCLE_CONST
+		cmd = INT_CYCLE_CMD + str(gValue1)
 		#print cmd
 		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 		#self.ShowIntCycle()
@@ -564,7 +619,7 @@ class mainWindow(QMainWindow):
 		self.SettingData[1] = startValue
 		#self.SettingData[10] = self.ms.Integrator.ResetCycle.spin.value()
 		#self.SettingData[11] = self.ms.Integrator.HoldCycle.spin.value()
-		self.SettingData[12] = self.ms.Integrator.IntCycle.spin.value()
+		#self.SettingData[12] = self.ms.Integrator.IntCycle.spin.value()
 		#print(self.SettingData)
 		SettingData = [str(line) + '\n' for line in self.SettingData] 
 		if not os.path.isdir(SETTING_FILEPATH):
@@ -591,7 +646,65 @@ class mainWindow(QMainWindow):
 		self.StartBtn.setEnabled(False)
 		#self.StopBtn.setEnabled(True)
 
+#Integrator
+	def IntVoltageChange2(self):
+		startValue = self.ms.HVScan.StartVoltage.spin.value()
+		stepValue = float(self.ms.HVScan.VoltageStep.spin.value())/1000.0
+		loopValue = self.ms.HVScan.Loop.spin.value()
+		stopValue = startValue + stepValue * loopValue
+
+		voltage2 = self.ms.Integrator.vText2.value()
+
+		if ((stopValue - voltage2) > 1):
+			self.ms.Integrator.vText3.setRange(voltage2+1, stopValue-1)
+
+	def IntVoltageChange3(self):
+		startValue = self.ms.HVScan.StartVoltage.spin.value()
+		stepValue = float(self.ms.HVScan.VoltageStep.spin.value())/1000.0
+		loopValue = self.ms.HVScan.Loop.spin.value()
+		stopValue = startValue + stepValue * loopValue
+
+		voltage3 = self.ms.Integrator.vText3.value()
+
+		if ((stopValue - voltage3) > 1):
+			self.ms.Integrator.vText4.setRange(voltage3+1, stopValue-1)
+
 #HVScan
+	def VoltageChange(self):
+		startValue = self.ms.HVScan.StartVoltage.spin.value()
+		stepValue = float(self.ms.HVScan.VoltageStep.spin.value())/1000.0
+		loopValue = self.ms.HVScan.Loop.spin.value()
+		stopValue = startValue + stepValue * loopValue
+		self.ms.Integrator.vText1.setText("Start Voltage = "+str(startValue))
+		self.ms.Integrator.vText2.setRange(startValue, stopValue-1)
+		self.ms.Integrator.vText3.setRange(startValue, stopValue-1)
+		self.ms.Integrator.vText4.setRange(startValue, stopValue-1)
+		self.ms.Integrator.vText5.setText("Stop Voltage = "+str(stopValue))
+
+		if ((stopValue - startValue) >= 2):
+			self.ms.Integrator.vText2.setEnabled(True)
+			self.ms.Integrator.gValue2.setEnabled(True)
+			self.ms.Integrator.vText2.setRange(startValue+1, stopValue-1)
+		else:
+			self.ms.Integrator.vText2.setEnabled(False)
+			self.ms.Integrator.gValue2.setEnabled(False)
+
+		if ((stopValue - startValue) >= 3):
+			self.ms.Integrator.vText3.setEnabled(True)
+			self.ms.Integrator.gValue3.setEnabled(True)
+			self.ms.Integrator.vText3.setRange(startValue+2, stopValue-1)
+		else:
+			self.ms.Integrator.vText3.setEnabled(False)
+			self.ms.Integrator.gValue3.setEnabled(False)
+
+		if ((stopValue - startValue) >= 4):
+			self.ms.Integrator.vText4.setEnabled(True)
+			self.ms.Integrator.gValue4.setEnabled(True)
+			self.ms.Integrator.vText4.setRange(startValue+3, stopValue-1)
+		else:
+			self.ms.Integrator.vText4.setEnabled(False)
+			self.ms.Integrator.gValue4.setEnabled(False)
+
 	def VoltageOut(self):
 		#TD_value_float = float(self.HVScan.TimeDelay.spin.value()/1000.0)
 		if self.Setting.radioBtn2.isChecked():
@@ -614,82 +727,105 @@ class mainWindow(QMainWindow):
 		#start_time = time.time()*1000
 		reg_EOI = 0
 		while (i < loopValue) or (self.HVScanFlag == True) or (self.DCmodeFlag == True):
-				if ( (i < loopValue) & (self.HVScanFlag == True) ) or (self.DCmodeFlag == True):
-						if (self.HVScanFlag == True):
-								Vout1 = startValue + stepValue * i
-								Vout2 = float(Vout1) * DAC_Constant_S5
-								#self.card.writeAoValue(1, Vout2)
-								cmd = DAC_SCAN + str(Vout2)
-								#print cmd
-								stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-								self.ms.HVScan.text2.setText(str(Vout1)+" (V)")
-								self.ms.HVScan.text2.show()
+			if ( (i < loopValue) & (self.HVScanFlag == True) ) or (self.DCmodeFlag == True):
+				if (self.HVScanFlag == True):
+					Vout1 = startValue + stepValue * i
+					Vout2 = float(Vout1) * DAC_Constant_S5
+					#self.card.writeAoValue(1, Vout2)
+					cmd = DAC_SCAN + str(Vout2)
+					#print cmd
+					stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
+					self.ms.HVScan.text2.setText(str(Vout1)+" (V)")
+					self.ms.HVScan.text2.show()
 
-						cmd = SCAN_REG_CMD + '1'
+					#2019.6.25
+					voltage2 = self.ms.Integrator.vText2.value()
+					voltage3 = self.ms.Integrator.vText3.value()
+					voltage4 = self.ms.Integrator.vText4.value()
+
+					if (Vout1 == voltage2) and (self.ms.Integrator.vText2.isEnabled):
+						gValue2 = self.ms.Integrator.gValue2.value() * CYCLE_CONST
+						cmd = INT_CYCLE_CMD + str(gValue2)
 						#print cmd
 						stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-						# time.sleep(0.001)
-						# cmd = SCAN_REG_CMD + '0'
-						# #print cmd
-						# stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 
-						while (reg_EOI == 0):
-								stdin, stdout, stderr = self.ip.ssh.exec_command(REG_EOI_CMD)
-								for line in stdout:
-										#print line
-										reg_EOI = int(line[9])
-										#print 'reg_EOI = ' + str(reg_EOI)
-
-						#time.sleep(TD_value_float)
-						#SR_read = self.card.readAiAve(0, DAC_Average_Number)
-						#stdin, stdout, stderr = self.ip.ssh.exec_command(ADC_SCAN_READ)
-						cmd = ADC_SCAN_READ + Channel_str + MV_Number_str + ADC_SCAN_READ_gain
+					if (Vout1 == voltage3) and (self.ms.Integrator.vText3.isEnabled):
+						gValue3 = self.ms.Integrator.gValue2.value() * CYCLE_CONST
+						cmd = INT_CYCLE_CMD + str(gValue3)
 						#print cmd
-						SR_read_Total = 0.0
-						for j in range(0, AVG_time_value):
-								SR_read = 0.0
-								stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-								for line in stdout:
-										SR_read = float(line)
-										#print "for j " + str(j) + " : " + str(SR_read)
-								SR_read_Total = SR_read_Total + SR_read
-						#print "while i " + str(i) + " : " + str(SR_read_Total)
-						SR_read = SR_read_Total / AVG_time_value
+						stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 
-						if (i >= 0):	# 2019.5.7
-								self.data.append(SR_read*(-1000))
-								if (self.HVScanFlag == True):
-										self.dv.append(i*stepValue + startValue - Fix_Vol_value)
-								else:
-										self.dv.append(i)
+					if (Vout1 == voltage4) and (self.ms.Integrator.vText4.isEnabled):
+						gValue4 = self.ms.Integrator.gValue2.value() * CYCLE_CONST
+						cmd = INT_CYCLE_CMD + str(gValue4)
+						#print cmd
+						stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 
-						self.plot.ax.clear()
-						self.plot.ax.set_xlabel("delta V")
-						self.plot.ax.set_ylabel("Voltage Output (mV)")
-						self.plot.ax.plot(self.dv,self.data, '-')
-						self.plot.canvas.draw()
-						self.Signal_Read.text.setText(str("%2.4f"%SR_read))
-						self.Signal_Read.text.show()
-						i = i + 1
-				 # elif (self.HVScanFlag == True):
-				 # 	#end_time = time.time()*1000
-				 # 	#diff_time = end_time - start_time
-				 # 	#print diff_time
-				 # 	time.sleep(TD_value_float)
-				 # 	#SR_read = self.card.readAiAve(0,DAC_Average_Number )
-				 # 	#stdin, stdout, stderr = self.ip.ssh.exec_command(ADC_SCAN_READ)
-				 # 	cmd = ADC_SCAN_READ + MV_Number_str + ADC_SCAN_READ_gain
-				 # 	#print cmd
-				 # 	stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-				 # 	for line in stdout:
-				 # 		SR_read = float(line)
-				 # 		#print SR_read
-				 # 	self.Signal_Read.text.setText(str("%2.4f"%SR_read))
-				 # 	self.Signal_Read.text.show()
-				#elif (self.HVScanFlag == True):
-						#self.StopScan()
-				else:
-						i = loopValue
+				cmd = SCAN_REG_CMD + '1'
+				#print cmd
+				stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
+				# time.sleep(0.001)
+				# cmd = SCAN_REG_CMD + '0'
+				# #print cmd
+				# stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
+
+				while (reg_EOI == 0):
+					stdin, stdout, stderr = self.ip.ssh.exec_command(REG_EOI_CMD)
+					for line in stdout:
+						#print line
+						reg_EOI = int(line[9])
+						#print 'reg_EOI = ' + str(reg_EOI)
+
+				#time.sleep(TD_value_float)
+				#SR_read = self.card.readAiAve(0, DAC_Average_Number)
+				#stdin, stdout, stderr = self.ip.ssh.exec_command(ADC_SCAN_READ)
+				cmd = ADC_SCAN_READ + Channel_str + MV_Number_str + ADC_SCAN_READ_gain
+				#print cmd
+				SR_read_Total = 0.0
+				for j in range(0, AVG_time_value):
+					SR_read = 0.0
+					stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
+					for line in stdout:
+						SR_read = float(line)
+						#print "for j " + str(j) + " : " + str(SR_read)
+					SR_read_Total = SR_read_Total + SR_read
+				#print "while i " + str(i) + " : " + str(SR_read_Total)
+				SR_read = SR_read_Total / AVG_time_value
+
+				if (i >= 0):	# 2019.5.7
+					self.data.append(SR_read*(-1000))
+					if (self.HVScanFlag == True):
+						self.dv.append(i*stepValue + startValue - Fix_Vol_value)
+					else:
+						self.dv.append(i)
+
+				self.pic.plot.ax.clear()
+				self.pic.plot.ax.set_xlabel("delta V")
+				self.pic.plot.ax.set_ylabel("Voltage Output (mV)")
+				self.pic.plot.ax.plot(self.dv,self.data, '-')
+				self.pic.plot.canvas.draw()
+				self.Signal_Read.text.setText(str("%2.4f"%SR_read))
+				self.Signal_Read.text.show()
+				i = i + 1
+			# elif (self.HVScanFlag == True):
+			# 	#end_time = time.time()*1000
+			# 	#diff_time = end_time - start_time
+			# 	#print diff_time
+			# 	time.sleep(TD_value_float)
+			# 	#SR_read = self.card.readAiAve(0,DAC_Average_Number )
+			# 	#stdin, stdout, stderr = self.ip.ssh.exec_command(ADC_SCAN_READ)
+			# 	cmd = ADC_SCAN_READ + MV_Number_str + ADC_SCAN_READ_gain
+			# 	#print cmd
+			# 	stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
+			# 	for line in stdout:
+			# 		SR_read = float(line)
+			# 		#print SR_read
+			# 	self.Signal_Read.text.setText(str("%2.4f"%SR_read))
+			# 	self.Signal_Read.text.show()
+			elif (self.HVScanFlag == True):
+				self.StopScan()
+			else:
+				i = loopValue
 
 
 	def StartScan(self):
@@ -709,7 +845,7 @@ class mainWindow(QMainWindow):
 		self.SettingData[9] = self.ms.Data_Sampling.AVG_time.spin.value()
 		#self.SettingData[10] = self.ms.Integrator.ResetCycle.spin.value()
 		#self.SettingData[11] = self.ms.Integrator.HoldCycle.spin.value()
-		self.SettingData[12] = self.ms.Integrator.IntCycle.spin.value()
+		#self.SettingData[12] = self.ms.Integrator.IntCycle.spin.value()
 		#print(self.SettingData)
 		SettingData = [str(line) + '\n' for line in self.SettingData] 
 		if not os.path.isdir(SETTING_FILEPATH):
@@ -729,26 +865,26 @@ class mainWindow(QMainWindow):
 		#self.StopBtn.setEnabled(True)
 
 
-# def StopScan(self):
-# 	self.DCmodeFlag = False
-# 	self.HVScanFlag = False
-# 	val = self.HVScan.StartVoltage.spin.value()
-# 	self.HVScan.text2.setText(str(val)+" (V)")
-# 	#self.card.writeAoValue(0,float(val)*DAC_Constant_S5)
-# 	#stdin, stdout, stderr = self.ip.ssh.exec_command(DAC_SCAN_STOP)
-# 	startValue = self.HVScan.StartVoltage.spin.value()
-# 	Vout1 = startValue
-# 	Vout2 = float(startValue) * DAC_Constant_S5
-# 	cmd = DAC_SCAN + str(Vout2)
-# 	#print cmd
-# 	stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-# 	#self.FanSpeedFlag = False
-# 	#self.card.enableCounter(False)
-# 	self.DCmode.setEnabled(True)
-# 	self.StartBtn.setEnabled(True)
-# 	#self.StopBtn.setEnabled(False)
-# 	self.Signal_Read.SaveDataBtn.setEnabled(True)
-# 	self.Data_Analysis.AnalyBtn.setEnabled(True)
+	def StopScan(self):
+		self.DCmodeFlag = False
+		self.HVScanFlag = False
+		val = self.HVScan.StartVoltage.spin.value()
+		self.HVScan.text2.setText(str(val)+" (V)")
+		#self.card.writeAoValue(0,float(val)*DAC_Constant_S5)
+		#stdin, stdout, stderr = self.ip.ssh.exec_command(DAC_SCAN_STOP)
+		startValue = self.HVScan.StartVoltage.spin.value()
+		Vout1 = startValue
+		Vout2 = float(startValue) * DAC_Constant_S5
+		cmd = DAC_SCAN + str(Vout2)
+		#print cmd
+		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
+		#self.FanSpeedFlag = False
+		#self.card.enableCounter(False)
+		self.DCmode.setEnabled(True)
+		self.StartBtn.setEnabled(True)
+		#self.StopBtn.setEnabled(False)
+		self.ms.Signal_Read.SaveDataBtn.setEnabled(True)
+		self.ms.Data_Analysis.AnalyBtn.setEnabled(True)
 
 
 #DC_Voltage
@@ -818,11 +954,11 @@ class mainWindow(QMainWindow):
 				data2max = max(self.data2)
 				data2min = min(self.data2)
 				self.ms.Data_Analysis.Threshold.spin.setRange(data2min, data2max)
-				self.plot2.ax.clear()
-				self.plot2.ax.set_xlabel("delta V")
-				self.plot2.ax.set_ylabel("Voltage Output (mV)")
-				self.plot2.ax.plot(self.dv2,self.data2, '-')
-				self.plot2.canvas.draw()
+				self.pic.plot2.ax.clear()
+				self.pic.plot2.ax.set_xlabel("delta V")
+				self.pic.plot2.ax.set_ylabel("Voltage Output (mV)")
+				self.pic.plot2.ax.plot(self.dv2,self.data2, '-')
+				self.pic.plot2.canvas.draw()
 				self.AnalyBtn.setEnabled(True)
 
 	def AnalysisData(self):
@@ -835,11 +971,11 @@ class mainWindow(QMainWindow):
 		results_half = peak_widths(self.data2, peaks, rel_height = 0.5)
 		#print results_half
 
-		self.plot2.ax.clear()
-		self.plot2.ax.set_xlabel("delta V")
-		self.plot2.ax.set_ylabel("Voltage Output (mV)")
-		self.plot2.ax.plot(self.dv2,self.data2, '-')
-		self.plot2.canvas.draw()
+		self.pic.plot2.ax.clear()
+		self.pic.plot2.ax.set_xlabel("delta V")
+		self.pic.plot2.ax.set_ylabel("Voltage Output (mV)")
+		self.pic.plot2.ax.plot(self.dv2,self.data2, '-')
+		self.pic.plot2.canvas.draw()
 
 		self.analist = []
 		for index in peaks:
@@ -859,9 +995,9 @@ class mainWindow(QMainWindow):
 				yvalue = self.analist[3*i+1]
 				#ratio = yvalue / deltax
 				ratio = xvalue / deltax
-				self.plot2.ax.axvline(x=xvalue, color='k')
-				self.plot2.ax.text(xvalue, yvalue, str("%2.3f" %ratio), fontsize=12)
-				self.plot2.canvas.draw()
+				self.pic.plot2.ax.axvline(x=xvalue, color='k')
+				self.pic.plot2.ax.text(xvalue, yvalue, str("%2.3f" %ratio), fontsize=12)
+				self.pic.plot2.canvas.draw()
 
 		#print self.analist
 		self.AnalyBtn.setEnabled(False)
@@ -885,12 +1021,12 @@ class mainWindow(QMainWindow):
 
 	def ShowThreshold(self):
 		value = float(self.ms.Data_Analysis.Threshold.spin.value())
-		self.plot2.ax.clear()
-		self.plot2.ax.set_xlabel("delta V")
-		self.plot2.ax.set_ylabel("Voltage Output (mV)")
-		self.plot2.ax.plot(self.dv2, self.data2, '-')
-		self.plot2.ax.axhline(y=value, color='r')
-		self.plot2.canvas.draw()
+		self.pic.plot2.ax.clear()
+		self.pic.plot2.ax.set_xlabel("delta V")
+		self.pic.plot2.ax.set_ylabel("Voltage Output (mV)")
+		self.pic.plot2.ax.plot(self.dv2, self.data2, '-')
+		self.pic.plot2.ax.axhline(y=value, color='r')
+		self.pic.plot2.canvas.draw()
 		self.AnalyBtn.setEnabled(True)
 
 	def NoiseChange(self):
