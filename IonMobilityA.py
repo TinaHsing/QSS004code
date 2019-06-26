@@ -28,12 +28,13 @@ TimeDelay_MAX = 500
 
 DAC_Constant_S5 = 6.0/5000.0
 DAC_Average_Number = 10
+ADC_ratio = 5.0/65535.0
 
 DC_Voltage1_MIN = 0
 DC_Voltage1_MAX = 2000
 
 DC_Voltage2_MIN = 0
-DC_Voltage2_MAX = 4000
+DC_Voltage2_MAX = 5000
 
 Fan_Speed_MIN = 0
 Fan_Speed_MAX = 5000
@@ -443,7 +444,7 @@ class mainWindow(QMainWindow):
 				self.usb.writeBinary(DAC_SCAN_READ)
 				line = self.usb.readBinary()
 				#print line
-				SR_read = float(line)
+				SR_read = float(line)*ADC_ratio
 				#print SR_read
 				self.data.append(SR_read)
 				self.dv.append(i*stepValue+startValue)
