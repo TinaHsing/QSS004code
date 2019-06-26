@@ -2,8 +2,8 @@ import serial
 import serial.tools.list_ports
 import platform
 ft232_name_in_mac = "0403:6001"
-#ft232_name_in_win = "VID_0403+PID_6001"
-ft232_name_in_win = "USB VID:PID=2341:0043"	#Arduino Uno
+ft232_name_in_win = "VID_0403+PID_6001"
+#ft232_name_in_win = "USB VID:PID=2341:0043"	#Arduino Uno
 
 class FT232:
 	def __init__(self, baudrate, timeout):
