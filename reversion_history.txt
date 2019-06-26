@@ -8,4 +8,11 @@ IonMobilityR_V1.03
 5. add Scan_reg¡BReg_EOI
 6. remove Time Delay
 
+IonMobilityR_V1.04
+2019-06-25
+1. change UI to Tab layout
+2. add Ch0 and Ch1 radio button
+3. remove reset cycle¡Bhold cycle¡Bint cycle,
+add set int cycle by voltage
+4. add ratio to Data_Analysis.txt
 
