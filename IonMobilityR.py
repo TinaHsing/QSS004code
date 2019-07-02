@@ -108,13 +108,13 @@ class spinBlock():
 		adjLayout = QGridLayout()
 		adjLayout.addWidget(self.spin,0,0,1,1)
 		if (self.SetBtnFlag == True):
-				adjLayout.addWidget(self.SetBtn,0,1,1,1)
-				if (self.text.text() != ""):
-						adjLayout.addWidget(self.text,0,2,1,1)
-						adjLayout.addWidget(self.value,0,3,1,1)
+			adjLayout.addWidget(self.SetBtn,0,1,1,1)
+			if (self.text.text() != ""):
+				adjLayout.addWidget(self.text,0,2,1,1)
+				adjLayout.addWidget(self.value,0,3,1,1)
 		elif (self.text.text() != ""):
-				adjLayout.addWidget(self.text,0,1,1,1)
-				adjLayout.addWidget(self.value,0,2,1,1)
+			adjLayout.addWidget(self.text,0,1,1,1)
+			adjLayout.addWidget(self.value,0,2,1,1)
 		self.adjGroupBox.setLayout(adjLayout)
 		self.adjGroupBox.show()
 		return self.adjGroupBox
@@ -622,7 +622,7 @@ class mainWindow(QMainWindow):
 		#print(self.SettingData)
 		SettingData = [str(line) + '\n' for line in self.SettingData] 
 		if not os.path.isdir(SETTING_FILEPATH):
-				os.mkdir(SETTING_FILEPATH)
+			os.mkdir(SETTING_FILEPATH)
 		fo = open(SETTING_FILENAME, "w+")
 		fo.writelines(SettingData)
 		fo.close()
@@ -730,7 +730,6 @@ class mainWindow(QMainWindow):
 				if (self.HVScanFlag == True):
 					Vout1 = startValue + stepValue * i
 					Vout2 = float(Vout1) * DAC_Constant_S5
-					#self.card.writeAoValue(1, Vout2)
 					cmd = DAC_SCAN + str(Vout2)
 					#print cmd
 					stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
@@ -776,7 +775,6 @@ class mainWindow(QMainWindow):
 						#print 'reg_EOI = ' + str(reg_EOI)
 
 				#time.sleep(TD_value_float)
-				#SR_read = self.card.readAiAve(0, DAC_Average_Number)
 				#stdin, stdout, stderr = self.ip.ssh.exec_command(ADC_SCAN_READ)
 				cmd = ADC_SCAN_READ + Channel_str + MV_Number_str + ADC_SCAN_READ_gain
 				#print cmd
@@ -814,7 +812,6 @@ class mainWindow(QMainWindow):
 			# 	#diff_time = end_time - start_time
 			# 	#print diff_time
 			# 	time.sleep(TD_value_float)
-			# 	#SR_read = self.card.readAiAve(0,DAC_Average_Number )
 			# 	#stdin, stdout, stderr = self.ip.ssh.exec_command(ADC_SCAN_READ)
 			# 	cmd = ADC_SCAN_READ + MV_Number_str + ADC_SCAN_READ_gain
 			# 	#print cmd
@@ -872,7 +869,6 @@ class mainWindow(QMainWindow):
 		self.HVScanFlag = False
 		val = self.ms.HVScan.StartVoltage.spin.value()
 		self.ms.HVScan.text2.setText(str(val)+" (V)")
-		#self.card.writeAoValue(0,float(val)*DAC_Constant_S5)
 		#stdin, stdout, stderr = self.ip.ssh.exec_command(DAC_SCAN_STOP)
 		startValue = self.ms.HVScan.StartVoltage.spin.value()
 		Vout1 = startValue
@@ -881,7 +877,6 @@ class mainWindow(QMainWindow):
 		#print cmd
 		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 		#self.FanSpeedFlag = False
-		#self.card.enableCounter(False)
 		self.DCmode.setEnabled(True)
 		self.StartBtn.setEnabled(True)
 		self.StopBtn.setEnabled(False)
@@ -910,7 +905,6 @@ class mainWindow(QMainWindow):
 #Fan_Control
 #	def FanSpeedOut(self):
 #		while (self.FanSpeedFlag == True):
-#			FS_read = self.card.readFreq()
 #			#print(FS_read)
 #			self.Fan_Control.text2.setText(str(FS_read))
 #			self.Fan_Control.text2.show()
@@ -919,13 +913,11 @@ class mainWindow(QMainWindow):
 	def SetFanSpeed(self):
 		value3 = self.ms.Fan_Control.Fan_Speed.spin.value()
 		FS_value = float(value3)/1000.0
-		#self.card.writeAoValue(0, FS_value)
 		cmd = DAC_FAN + str(FS_value)
 		#print cmd
 		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 		self.ms.Fan_Control.Fan_Speed.value.setText(str(value3))
 		#self.FanSpeedFlag = True
-		#self.card.enableCounter(True)
 		#gt2 = threading.Thread(target = self.FanSpeedOut)
 		#gt2.start()
 
