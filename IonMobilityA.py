@@ -24,7 +24,7 @@ VoltageStep_MAX = 2000
 Loop_MIN = 1
 Loop_MAX = 2000
 
-TimeDelay_MIN = 0
+TimeDelay_MIN = 20
 TimeDelay_MAX = 10000
 
 MV_Numver_MIN = 50
@@ -33,9 +33,9 @@ MV_Numver_MAX = 30000
 AVG_time_MIN = 1
 AVG_time_MAX = 100
 
-DAC_Constant_S5 = 6.0/5000.0
+DAC_Constant_S5 = 6.0 / 5000.0
+DAC_ratio = 65535.0 / 5.0
 #DAC_Average_Number = 10
-ADC_ratio = 5.0/65535.0
 
 DC_Voltage1_MIN = 0
 DC_Voltage1_MAX = 2000
@@ -65,7 +65,8 @@ DAC_SCAN = "SetVoltage 2 "
 DAC_SCAN_STOP = 'SetVoltage 2 0'
 DAC_DC =   "SetVoltage 4 "
 DAC_FAN =  "SetVoltage 5 "
-ADC_SCAN_READ = "ReadVoltage"
+ADC_SCAN_READ = "ReadVoltage "
+READ_FAN_SPEED = "ReadCounter"
 
 Baudrate = 115200
 Timeout = 0.1
@@ -382,7 +383,7 @@ class mainWindow(QMainWindow):
 
 		#Fan_Control
 		self.ms.Fan_Control.Fan_Speed.SetBtn.clicked.connect(lambda:self.SetFanSpeed())
-		self.ms.FanSpeedFlag = False
+		self.FanSpeedFlag = False
 
 		#Signal_Read
 		self.Signal_Read.SaveDataBtn.clicked.connect(lambda:self.SaveData())
@@ -500,7 +501,7 @@ class mainWindow(QMainWindow):
 		fo.close()
 
 		Vout1 = startValue
-		Vout2 = float(startValue) * DAC_Constant_S5
+		Vout2 = float(startValue) * DAC_Constant_S5 * DAC_ratio
 		cmd = DAC_SCAN + str(Vout2)
 		#print cmd
 		#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
@@ -510,10 +511,11 @@ class mainWindow(QMainWindow):
 		self.ms.HVScan.text2.setText(str(Vout1)+" (V)")
 		self.ms.HVScan.text2.show()
 
-		self.DCmodeFlag = True
-		gt1 = threading.Thread(target = self.VoltageOut)
-		gt1.start()
-		self.data = []
+		if (self.DCmodeFlag == False):
+			self.DCmodeFlag = True
+			self.data = []
+			gt1 = threading.Thread(target = self.VoltageOut)
+			gt1.start()
 		self.DCmode.setEnabled(False)
 		self.StartBtn.setEnabled(False)
 		self.StopBtn.setEnabled(True)
@@ -545,7 +547,7 @@ class mainWindow(QMainWindow):
 			if ( (i < loopValue) & (self.HVScanFlag == True) ) or (self.DCmodeFlag == True):
 				if (self.HVScanFlag == True):
 					Vout1 = startValue + stepValue * i
-					Vout2 = float(Vout1) * DAC_Constant_S5
+					Vout2 = float(Vout1) * DAC_Constant_S5 * DAC_ratio
 					cmd = DAC_SCAN + str(Vout2)
 					#print cmd
 					#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
@@ -558,21 +560,27 @@ class mainWindow(QMainWindow):
 				time.sleep(TD_value_float)
 				#stdin, stdout, stderr = self.ip.ssh.exec_command(ADC_SCAN_READ)
 				#cmd = ADC_SCAN_READ + Channel_str + MV_Number_str + ADC_SCAN_READ_gain
+				cmd = ADC_SCAN_READ + MV_Number_str
 				#print cmd
 				SR_read_Total = 0.0
+
 				for j in range(0, AVG_time_value):
 					SR_read = 0.0
 					#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 					#for line in stdout:
 						#SR_read = float(line)
 						#print "for j " + str(j) + " : " + str(SR_read)
-					self.usb.writeBinary(ADC_SCAN_READ)
+					#self.usb.writeBinary(ADC_SCAN_READ)
+					self.usb.writeBinary(cmd)
 					line = self.usb.readBinary()
 					#print line
+					while (line == ''):
+						line = self.usb.readBinary()
+						#print line
 					SR_read = float(line)
 					SR_read_Total = SR_read_Total + SR_read
 				#print "while i " + str(i) + " : " + str(SR_read_Total)
-				SR_read = SR_read_Total / AVG_time_value * 1000
+				SR_read = SR_read_Total / AVG_time_value / DAC_ratio * 2
 
 				if (i >= 0):	# 2019.5.7
 					self.data.append(SR_read)
@@ -635,10 +643,11 @@ class mainWindow(QMainWindow):
 		fo.writelines(SettingData)
 		fo.close()
 
-		self.HVScanFlag = True
-		self.data = []
-		gt1 = threading.Thread(target = self.VoltageOut)
-		gt1.start()
+		if (self.HVScanFlag == False):
+			self.HVScanFlag = True
+			self.data = []
+			gt1 = threading.Thread(target = self.VoltageOut)
+			gt1.start()
 		self.DCmode.setEnabled(False)
 		self.StartBtn.setEnabled(False)
 		self.StopBtn.setEnabled(True)
@@ -650,10 +659,10 @@ class mainWindow(QMainWindow):
 		val = self.ms.HVScan.StartVoltage.spin.value()
 		self.ms.HVScan.text2.setText(str(val)+" (V)")
 		#stdin, stdout, stderr = self.ip.ssh.exec_command(DAC_SCAN_STOP)
-		startValue = self.ms.HVScan.StartVoltage.spin.value()
-		Vout1 = startValue
-		Vout2 = float(startValue) * DAC_Constant_S5
-		cmd = DAC_SCAN + str(Vout2)
+		#startValue = self.ms.HVScan.StartVoltage.spin.value()
+		#Vout1 = startValue
+		#Vout2 = float(startValue) * DAC_Constant_S5
+		#cmd = DAC_SCAN + str(Vout2)
 		#print cmd
 		#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 		self.usb.writeBinary(DAC_SCAN_STOP)
@@ -670,7 +679,7 @@ class mainWindow(QMainWindow):
 #DC_Voltage
 	def SetDC1(self):## Fixed Voltage
 		value1 = self.ms.DC_Voltage.DC_Voltage1.spin.value()
-		DC1_value_out = value1 * DAC_Constant_S5
+		DC1_value_out = value1 * DAC_Constant_S5 * DAC_ratio
 		cmd = DAC_DC + str(DC1_value_out)
 		#print cmd
 		#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
@@ -681,7 +690,7 @@ class mainWindow(QMainWindow):
 
 	def SetDC2(self): ##ESI
 		value2 = self.ms.DC_Voltage.DC_Voltage2.spin.value()
-		DC2_value_out = value2 * DAC_Constant_S5
+		DC2_value_out = value2 * DAC_Constant_S5 * DAC_ratio
 		cmd = DAC_ESI + str(DC2_value_out)
 		#print cmd
 		#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
@@ -692,26 +701,38 @@ class mainWindow(QMainWindow):
 
 
 #Fan_Control
-#	def FanSpeedOut(self):
-#		while (self.FanSpeedFlag == True):
-#			#print(FS_read)
-#			self.Fan_Control.text2.setText(str(FS_read))
-#			self.Fan_Control.text2.show()
-#			time.sleep(1)
+	def FanSpeedOut(self):
+		while (self.FanSpeedFlag == True):
+			self.usb.writeBinary(READ_FAN_SPEED)
+			line = self.usb.readBinary()
+			#print line
+			while (line == ''):
+				line = self.usb.readBinary()
+				#print line
+			Fan_Speed = int(line)
+			self.ms.Fan_Control.Fan_Speed.value.setText(str(Fan_Speed))
+			self.ms.Fan_Control.Fan_Speed.value.show()
+			time.sleep(1)
 
 	def SetFanSpeed(self):
 		value3 = self.ms.Fan_Control.Fan_Speed.spin.value()
-		FS_value = float(value3)/1000.0
+		FS_value = float(value3)/1000.0 * DAC_ratio
 		cmd = DAC_FAN + str(FS_value)
 		#print cmd
 		#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 		self.usb.writeBinary(cmd)
 		#line = self.usb.readBinary()
 		#print line
-		self.ms.Fan_Control.Fan_Speed.value.setText(str(value3))
-		#self.FanSpeedFlag = True
-		#gt2 = threading.Thread(target = self.FanSpeedOut)
-		#gt2.start()
+		if (value3 == 0):
+			self.FanSpeedFlag = False
+			#print "False 1"
+		else:
+			if (self.FanSpeedFlag == False):
+				#print "False 2"
+				gt2 = threading.Thread(target = self.FanSpeedOut)
+				gt2.start()
+			self.FanSpeedFlag = True
+			#print "True"
 
 #Signal_Read
 	def SaveData(self):
