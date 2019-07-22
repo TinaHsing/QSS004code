@@ -16,7 +16,7 @@ IonMobilityR_V1.04
 add set int cycle by voltage
 4. add ratio to Data_Analysis.txt
 
-IonMobilityR_V1.04
+IonMobilityR_V1.05
 2019-07-22
 1. fix analysis draw peaks error
 
