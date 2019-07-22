@@ -798,12 +798,12 @@ class mainWindow(QMainWindow):
 		for i in xrange(0, peak_num):
 			#print results_half[0][i]
 			deltax = results_half[0][i]
-			self.analist[3*i+2] = deltax
-			xvalue = self.analist[3*i+0]
-			yvalue = self.analist[3*i+1]
+			xvalue = self.analist[4*i+0]
+			yvalue = self.analist[4*i+1]
+			self.analist[4*i+2] = deltax
 			#ratio = yvalue / deltax
 			ratio = xvalue / deltax
-			self.analist[3*i+3] = ratio
+			self.analist[4*i+3] = ratio
 			self.pic.plot2.ax.axvline(x=xvalue, color='k')
 			self.pic.plot2.ax.text(xvalue, yvalue, str("%2.3f" %ratio), fontsize=12)
 			self.pic.plot2.canvas.draw()
