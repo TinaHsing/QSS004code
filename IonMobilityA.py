@@ -53,7 +53,7 @@ Noise_MIN = 1
 Noise_MAX = 100
 
 SETTING_FILEPATH = "set"
-SETTING_FILENAME = "set/setting.txt"
+SETTING_FILENAME = "set/setting_A.txt"
 READOUT_FILENAME = "Signal_Read_Out.txt"
 ANALYSIS_FILENAME = "Data_Analysis.txt"
 LOGO_FILENAME = "set/logo.png"
@@ -543,7 +543,13 @@ class mainWindow(QMainWindow):
 		self.dv = []
 		#start_time = time.time()*1000
 		reg_EOI = 0
+		whileHVScanFlag = False
+		whileDCmodeFlag = False
 		while (i < loopValue) or (self.HVScanFlag == True) or (self.DCmodeFlag == True):
+			if (self.HVScanFlag):
+				whileHVScanFlag = True
+			elif (self.DCmodeFlag):
+				whileDCmodeFlag = True
 			if ( (i < loopValue) & (self.HVScanFlag == True) ) or (self.DCmodeFlag == True):
 				if (self.HVScanFlag == True):
 					Vout1 = startValue + stepValue * i
@@ -584,15 +590,18 @@ class mainWindow(QMainWindow):
 
 				if (i >= 0):	# 2019.5.7
 					self.data.append(SR_read)
-					if (self.HVScanFlag == True):
+					#print(self.data[i])
+					if (whileHVScanFlag):
+						#print(i*stepValue + startValue - Fix_Vol_value)
 						self.dv.append(i*stepValue + startValue - Fix_Vol_value)
-					else: #DCmode
+					elif (whileDCmodeFlag):
 						self.dv.append(i)
+					#print(str(i)+","+str(self.HVScanFlag)+","+str(self.DCmodeFlag)+","+str(self.dv[i]))
 
 				self.pic.plot.ax.clear()
-				if (self.HVScanFlag == True):
+				if (whileHVScanFlag):
 					self.pic.plot.ax.set_xlabel("dV (V)")
-				else: #DCmode
+				elif (whileDCmodeFlag):
 					self.pic.plot.ax.set_xlabel("index")
 				self.pic.plot.ax.set_ylabel("Voltage Output (mV)")
 				self.pic.plot.ax.plot(self.dv,self.data, '-')
