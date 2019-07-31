@@ -20,4 +20,7 @@ IonMobilityR_V1.05
 2019-07-22
 1. fix analysis draw peaks error
 
- 
+IonMobilityR_V1.06
+2019-07-31
+1. fix stop while loop draw error
+
