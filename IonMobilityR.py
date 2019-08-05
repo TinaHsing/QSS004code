@@ -48,7 +48,7 @@ Fan_Speed_MAX = 5000
 #INT_CYCLE_MIN = 125000
 #INT_CYCLE_MAX = 125000000
 INT_CYCLE_MIN = 1
-INT_CYCLE_MAX = 1000
+INT_CYCLE_MAX = 10000
 
 Threshold_MIN = -10*1000
 Threshold_MAX = 10*1000
@@ -998,7 +998,8 @@ class mainWindow(QMainWindow):
 			yvalue = self.analist[4*i+1]
 			self.analist[4*i+2] = deltax
 			#ratio = yvalue / deltax
-			ratio = xvalue / deltax
+			#ratio = xvalue / deltax
+			ratio = xvalue
 			self.analist[4*i+3] = ratio
 			self.pic.plot2.ax.axvline(x=xvalue, color='k')
 			self.pic.plot2.ax.text(xvalue, yvalue, str("%2.3f" %ratio), fontsize=12)
