@@ -24,3 +24,8 @@ IonMobilityR_V1.06
 2019-07-31
 1. fix stop while loop draw error
 
+IonMobilityR_V1.07
+2019-08-05
+1. fix data analysis ratio
+2. change Int Cycle max to 10000
+
