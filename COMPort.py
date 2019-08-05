@@ -28,10 +28,12 @@ class FT232:
 			elif os == "Windows":
 				if ft232_name_in_win in a[2]:
 					self.cp = a[0]
-		#print( "cp = " + str(self.cp) )
+				elif ft232_name_in_mac in a[2]:
+					self.cp = a[0]
+#		print(a)
+#		print( "cp = " + str(self.cp) )
 		if self.cp != 0:
 			find_com = True
-		#print( "connected = " + str(connected) )
 
 		return find_com
 
