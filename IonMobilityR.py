@@ -87,7 +87,7 @@ HOST_PORT = 22
 
 TITLE_TEXT = " GRC Ion Mobility Spectrometer "
 VERSION_TEXT = TITLE_TEXT + "\n" + \
-" IonMobilityR V1.06 \n\n" + \
+" IonMobilityR V1.07 \n\n" + \
 " Copyright @ 2019 TAIP \n" + \
 " Maintain by Quantaser Photonics Co. Ltd "
 
