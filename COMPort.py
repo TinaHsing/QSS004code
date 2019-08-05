@@ -52,6 +52,6 @@ class FT232:
 
 	def readBinary(self):
 		data = self.port.readline()
-		print data
+		#print data
 		return data
 
