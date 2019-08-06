@@ -33,7 +33,8 @@ MV_Numver_MAX = 30000
 AVG_time_MIN = 1
 AVG_time_MAX = 100
 
-DAC_Constant_S5 = 6.0 / 5000.0
+DAC_Constant_S5 = 6.0 / 2000.0
+DAC_Constant_S5_ESI = 6.0 / 5000.0
 DAC_ratio = 65535.0 / 5.0
 #DAC_Average_Number = 10
 
@@ -699,7 +700,7 @@ class mainWindow(QMainWindow):
 
 	def SetDC2(self): ##ESI
 		value2 = self.ms.DC_Voltage.DC_Voltage2.spin.value()
-		DC2_value_out = value2 * DAC_Constant_S5 * DAC_ratio
+		DC2_value_out = value2 * DAC_Constant_S5_ESI * DAC_ratio
 		cmd = DAC_ESI + str(DC2_value_out)
 		#print cmd
 		#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
