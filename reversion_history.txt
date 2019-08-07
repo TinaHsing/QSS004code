@@ -1,12 +1,15 @@
-IonMobilityR_V1.03
-2019-5-21
-1. change "ratio = yvalue / deltax" to "ratio = xvalue / deltax"
-2. change ratio output format to "%2.3f"
-2019-5-30
-3. Load bit file
-4. add reset cycle¡Bhold cycle¡Bint cycle
-5. add Scan_reg¡BReg_EOI
-6. remove Time Delay
+IonMobilityR_V1.07
+2019-08-05
+1. fix data analysis ratio
+2. change Int Cycle max to 10000
+
+IonMobilityR_V1.06
+2019-07-31
+1. fix stop while loop draw error
+
+IonMobilityR_V1.05
+2019-07-22
+1. fix analysis draw peaks error
 
 IonMobilityR_V1.04
 2019-06-25
@@ -16,16 +19,12 @@ IonMobilityR_V1.04
 add set int cycle by voltage
 4. add ratio to Data_Analysis.txt
 
-IonMobilityR_V1.05
-2019-07-22
-1. fix analysis draw peaks error
-
-IonMobilityR_V1.06
-2019-07-31
-1. fix stop while loop draw error
-
-IonMobilityR_V1.07
-2019-08-05
-1. fix data analysis ratio
-2. change Int Cycle max to 10000
-
+IonMobilityR_V1.03
+2019-5-21
+1. change "ratio = yvalue / deltax" to "ratio = xvalue / deltax"
+2. change ratio output format to "%2.3f"
+2019-5-30
+3. Load bit file
+4. add reset cycle¡Bhold cycle¡Bint cycle
+5. add Scan_reg¡BReg_EOI
+6. remove Time Delay
