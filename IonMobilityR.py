@@ -3,6 +3,7 @@ import sys
 import time
 import paramiko
 import threading
+import numpy as np 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
@@ -455,8 +456,12 @@ class mainWindow(QMainWindow):
 
 		#Signal_Read
 		self.Signal_Read.SaveDataBtn.clicked.connect(lambda:self.SaveData())
-		self.data = []
-		self.dv = []
+		#self.data = []
+		self.data = np.empty(0)
+		#self.dv = []
+		self.dv = np.empty(0)
+		self.alldata = np.empty(0)
+		self.run_index = 0
 
 		#Data_Analysis
 		self.LoadBtn.clicked.connect(lambda:self.LoadData())
@@ -464,9 +469,12 @@ class mainWindow(QMainWindow):
 		self.SaveAnaBtn.clicked.connect(lambda:self.SaveAnaData())
 		self.ms.Data_Analysis.Threshold.spin.valueChanged.connect(lambda:self.ShowThreshold())
 		self.ms.Data_Analysis.Noise.spin.valueChanged.connect(lambda:self.NoiseChange())
-		self.data2 = []
-		self.dv2 = []
-		self.analist = []
+		#self.data2 = []
+		self.data2 = np.empty(0)
+		#self.dv2 = []
+		self.dv2 = np.empty(0)
+		#self.analist = []
+		self.analist = np.empty(0)
 
 		#self.ms.Integrator.ResetCycle.spin.valueChanged.connect(lambda:self.ShowResetCycle())
 		#self.ms.Integrator.HoldCycle.spin.valueChanged.connect(lambda:self.ShowHoldCycle())
@@ -640,7 +648,8 @@ class mainWindow(QMainWindow):
 		self.DCmodeFlag = True
 		gt1 = threading.Thread(target = self.VoltageOut)
 		gt1.start()
-		self.data = []
+		#self.data = []
+		self.data = np.empty(0)
 		self.DCmode.setEnabled(False)
 		self.StartBtn.setEnabled(False)
 		self.StopBtn.setEnabled(True)
@@ -721,8 +730,10 @@ class mainWindow(QMainWindow):
 		loopValue = self.ms.HVScan.Loop.spin.value()
 		startValue = self.ms.HVScan.StartVoltage.spin.value()
 		stepValue = float(self.ms.HVScan.VoltageStep.spin.value())/1000.0
-		self.data = []
-		self.dv = []
+		#self.data = []
+		self.data = np.empty(0)
+		#self.dv = []
+		self.dv = np.empty(0)
 		#start_time = time.time()*1000
 		reg_EOI = 0
 		whileHVScanFlag = False
@@ -796,14 +807,60 @@ class mainWindow(QMainWindow):
 				SR_read = SR_read_Total / AVG_time_value * (-1000)
 
 				if (i >= 0):	# 2019.5.7
-					self.data.append(SR_read)
+					#self.data.append(SR_read)
+					self.data = np.append(self.data, SR_read)
 					#print(self.data[i])
+
 					if (whileHVScanFlag):
-						#print(i*stepValue + startValue - Fix_Vol_value)
-						self.dv.append(i*stepValue + startValue - Fix_Vol_value)
+						newVaule = i*stepValue + startValue - Fix_Vol_value
+						#print(newVaule)
+						#self.dv.append(newVaule)
+						self.dv = np.append(self.dv, newVaule)
 					elif (whileDCmodeFlag):
-						self.dv.append(i)
+						#self.dv.append(i)
+						self.dv = np.append(self.dv, i)
 					#print(str(i)+","+str(self.HVScanFlag)+","+str(self.DCmodeFlag)+","+str(self.dv[i]))
+
+				if (0):	#(whileHVScanFlag):
+					data_len = len(self.data)
+					print "=========="
+					print data_len
+					print "get data"
+					print self.data
+
+					draw_len = data_len
+					self.run_index = self.run_index + 1
+					print self.run_index
+
+					alldata_len = len(self.alldata)
+					print alldata_len
+
+					if (alldata_len == 0):
+						for i in range(0, data_len):
+							#self.alldata.append(self.data[i])
+							self.alldata = np.append(self.alldata, self.data[i])
+					else:
+						if (data_len > alldata_len):
+							draw_len = alldata_len
+						elif (alldata_len > data_len):
+							draw_len = data_len
+						for i in range(0, draw_len):
+							self.alldata[i] = self.alldata[i] + self.data[i]
+
+					print "all data"
+					print self.alldata
+
+					#for i in range(0, draw_len):
+					#    self.data[i] = self.alldata[i] / self.run_index
+					self.data = self.alldata / self.run_index
+					data_len = len(self.data)
+					while (data_len > draw_len):
+						self.data = np.delete(self.data, -1)
+						self.dv = np.delete(self.dv, -1)
+						data_len = len(self.data)
+
+					print "avg data"
+					print self.data
 
 				self.pic.plot.ax.clear()
 				if (whileHVScanFlag):
@@ -865,7 +922,10 @@ class mainWindow(QMainWindow):
 		self.SetCycle()
 
 		self.HVScanFlag = True
-		self.data = []
+		#self.data = []
+		self.data = np.empty(0)
+		self.alldata = np.empty(0)
+		self.run_index = 0
 		gt1 = threading.Thread(target = self.VoltageOut)
 		gt1.start()
 		self.DCmode.setEnabled(False)
@@ -943,8 +1003,10 @@ class mainWindow(QMainWindow):
 
 #Data_Analysis
 	def LoadData(self):
-		self.data2 = []
-		self.dv2 = []
+		#self.data2 = []
+		self.data2 = np.empty(0)
+		#self.dv2 = []
+		self.dv2 = np.empty(0)
 		data2max = 0
 		data2min = 0
 		OpenFileName = QFileDialog.getOpenFileName(self,"Load Signal Data","","Text Files (*.txt)")
@@ -952,8 +1014,10 @@ class mainWindow(QMainWindow):
 			temp = [line.rstrip('\n') for line in open(OpenFileName)]
 			for a in temp:
 				b = a.split(',')
-				self.dv2.append(float(b[0]))
-				self.data2.append(float(b[1]))
+				#self.dv2.append(float(b[0]))
+				self.dv2 = np.append(self.dv2, float(b[0]))
+				#self.data2.append(float(b[1]))
+				self.data2 = np.append(self.data2, float(b[1]))
 			data2max = max(self.data2)
 			data2min = min(self.data2)
 			self.ms.Data_Analysis.Threshold.spin.setRange(data2min, data2max)
@@ -980,16 +1044,21 @@ class mainWindow(QMainWindow):
 		self.pic.plot2.ax.plot(self.dv2,self.data2, '-')
 		self.pic.plot2.canvas.draw()
 
-		self.analist = []
+		#self.analist = []
+		self.analist = np.empty(0)
 		for index in peaks:
 			xvalue = self.dv2[index]
-			self.analist.append(xvalue)
+			#self.analist.append(xvalue)
+			self.analist = np.append(self.analist, xvalue)
 			yvalue = self.data2[index]
-			self.analist.append(yvalue)
+			#self.analist.append(yvalue)
+			self.analist = np.append(self.analist, yvalue)
 			#ratio = yvalue / xvalue
 			#list.append(ratio)
-			self.analist.append(0.0)
-			self.analist.append(0.0)
+			#self.analist.append(0.0)
+			#self.analist.append(0.0)
+			self.analist = np.append(self.analist, 0.0)
+			self.analist = np.append(self.analist, 0.0)
 
 		for i in xrange(0, peak_num):
 			#print results_half[0][i]
