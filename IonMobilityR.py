@@ -806,61 +806,40 @@ class mainWindow(QMainWindow):
 				#print "while i " + str(i) + " : " + str(SR_read_Total)
 				SR_read = SR_read_Total / AVG_time_value * (-1000)
 
+				#for testing
+				#SR_read = 1000 + self.run_index + i
+				#print SR_read
+				#print i
+
 				if (i >= 0):	# 2019.5.7
 					#self.data.append(SR_read)
-					self.data = np.append(self.data, SR_read)
+					if ( (whileDCmodeFlag) or (self.run_index == 1)):
+						self.data = np.append(self.data, SR_read)
+					else:
+						self.data[i] = SR_read
 					#print(self.data[i])
 
 					if (whileHVScanFlag):
 						newVaule = i*stepValue + startValue - Fix_Vol_value
 						#print(newVaule)
 						#self.dv.append(newVaule)
-						self.dv = np.append(self.dv, newVaule)
+						if (self.run_index == 1):
+							self.dv = np.append(self.dv, newVaule)
 					elif (whileDCmodeFlag):
 						#self.dv.append(i)
 						self.dv = np.append(self.dv, i)
 					#print(str(i)+","+str(self.HVScanFlag)+","+str(self.DCmodeFlag)+","+str(self.dv[i]))
+					#print self.data[i]
 
-				if (0):	#(whileHVScanFlag):
-					data_len = len(self.data)
-					print "=========="
-					print data_len
-					print "get data"
-					print self.data
-
-					draw_len = data_len
-					self.run_index = self.run_index + 1
-					print self.run_index
-
-					alldata_len = len(self.alldata)
-					print alldata_len
-
-					if (alldata_len == 0):
-						for i in range(0, data_len):
-							#self.alldata.append(self.data[i])
+					#add avg data , 2019.8.19
+					if (whileHVScanFlag):
+						if (self.run_index == 1):
 							self.alldata = np.append(self.alldata, self.data[i])
-					else:
-						if (data_len > alldata_len):
-							draw_len = alldata_len
-						elif (alldata_len > data_len):
-							draw_len = data_len
-						for i in range(0, draw_len):
+						else:
 							self.alldata[i] = self.alldata[i] + self.data[i]
-
-					print "all data"
-					print self.alldata
-
-					#for i in range(0, draw_len):
-					#    self.data[i] = self.alldata[i] / self.run_index
-					self.data = self.alldata / self.run_index
-					data_len = len(self.data)
-					while (data_len > draw_len):
-						self.data = np.delete(self.data, -1)
-						self.dv = np.delete(self.dv, -1)
-						data_len = len(self.data)
-
-					print "avg data"
-					print self.data
+							self.data[i] = self.alldata[i] / self.run_index
+						#print self.alldata[i]
+						#print self.data[i]
 
 				self.pic.plot.ax.clear()
 				if (whileHVScanFlag):
@@ -872,7 +851,18 @@ class mainWindow(QMainWindow):
 				self.pic.plot.canvas.draw()
 				self.Signal_Read.text.setText(str("%2.4f"%SR_read))
 				self.Signal_Read.text.show()
+
 				i = i + 1
+
+				#add loop always , 2019.8.19
+				if (i >= loopValue) and (whileHVScanFlag):
+					#self.data = np.empty(0)
+					#self.dv = np.empty(0)
+					self.run_index = self.run_index + 1
+					tmp_str = "run " + str(self.run_index)
+					#print tmp_str
+					i = 0
+
 			# elif (self.HVScanFlag == True):
 			# 	#end_time = time.time()*1000
 			# 	#diff_time = end_time - start_time
@@ -925,7 +915,7 @@ class mainWindow(QMainWindow):
 		#self.data = []
 		self.data = np.empty(0)
 		self.alldata = np.empty(0)
-		self.run_index = 0
+		self.run_index = 1
 		gt1 = threading.Thread(target = self.VoltageOut)
 		gt1.start()
 		self.DCmode.setEnabled(False)
