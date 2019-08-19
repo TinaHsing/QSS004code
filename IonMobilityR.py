@@ -207,10 +207,10 @@ class Data_Sampling_Group(QWidget):
 		frameLayout.addWidget(self.radioBtn2)
 		self.frame.setLayout(frameLayout)
 
-		layout = QHBoxLayout()
-		layout.addWidget(self.frame)
-		layout.addWidget(self.MV_Number.spinBlockWidget())
-		layout.addWidget(self.AVG_time.spinBlockWidget())
+		layout = QGridLayout()
+		layout.addWidget(self.frame,0,0,1,2)
+		layout.addWidget(self.MV_Number.spinBlockWidget(),1,0,1,1)
+		layout.addWidget(self.AVG_time.spinBlockWidget(),1,1,1,1)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
@@ -362,8 +362,10 @@ class msTabSetting(QTabWidget):
 		super(msTabSetting, self).__init__(parent)
 		self.msTab1 = QWidget()
 		self.msTab2 = QWidget()
+		self.msTab3 = QWidget()
 		self.addTab(self.msTab1,"Voltage Setting")
-		self.addTab(self.msTab2,"Data Sampling and Analysis")
+		self.addTab(self.msTab2,"Data Sampling")
+		self.addTab(self.msTab3,"Data Analysis")
 
 		#Tab1
 		self.HVScan = HVScan_Group()
@@ -372,10 +374,20 @@ class msTabSetting(QTabWidget):
 		#Tab2
 		self.Data_Sampling = Data_Sampling_Group()
 		self.Integrator = Integrator_Group()
+		#Tab3
 		self.Data_Analysis = Data_Analysis_Group()
+		self.LoadBtn = QPushButton("Load")
+		self.AnalyBtn = QPushButton("Analysis")
+		self.SaveAnaBtn = QPushButton("Save Analysis")
+		self.Text = QLabel("")
+
+		#self.LoadBtn.setEnabled(False)
+		self.AnalyBtn.setEnabled(False)
+		self.SaveAnaBtn.setEnabled(False)
 
 		self.msTab1UI()
 		self.msTab2UI()
+		self.msTab3UI()
 
 	def msTab1UI(self):
 		tablayout = QVBoxLayout()
@@ -385,18 +397,26 @@ class msTabSetting(QTabWidget):
 		self.msTab1.setLayout(tablayout)
 
 	def msTab2UI(self):
-		tablayout = QVBoxLayout()
-		tablayout.addWidget(self.Data_Sampling.SubBlockWidget())
-		tablayout.addWidget(self.Integrator.SubBlockWidget())
-		tablayout.addWidget(self.Data_Analysis.SubBlockWidget())
+		tablayout = QGridLayout()
+		tablayout.addWidget(self.Data_Sampling.SubBlockWidget(),0,0,1,1)
+		tablayout.addWidget(self.Integrator.SubBlockWidget(),1,0,3,1)
 		self.msTab2.setLayout(tablayout)
+
+	def msTab3UI(self):
+		tablayout = QGridLayout()
+		tablayout.addWidget(self.Data_Analysis.SubBlockWidget(),0,0,1,3)
+		tablayout.addWidget(self.LoadBtn,1,0,1,1)
+		tablayout.addWidget(self.AnalyBtn,1,1,1,1)
+		tablayout.addWidget(self.SaveAnaBtn,1,2,1,1)
+		tablayout.addWidget(self.Text,2,0,3,3)
+		self.msTab3.setLayout(tablayout)
 
 
 class mainWindow(QMainWindow):
 	def __init__(self, parent=None):
 		super (mainWindow, self).__init__(parent)
 		self.setWindowTitle(TITLE_TEXT)
-		self.resize(1280,840)
+		self.resize(1280,640)
 		self.move(50,50)
 		self.pic = picTabSetting()
 		self.ms = msTabSetting()
@@ -405,9 +425,6 @@ class mainWindow(QMainWindow):
 		self.DCmode = QPushButton("DC mode")	# 2019.5.7
 		self.StartBtn = QPushButton("Start Scan")
 		self.StopBtn = QPushButton("Stop")
-		self.LoadBtn = QPushButton("Load")
-		self.AnalyBtn = QPushButton("Analysis")
-		self.SaveAnaBtn = QPushButton("Save Analysis")
 		w = QWidget()
 		self.picout = QLabel(w)
 		lg = QPixmap(LOGO_FILENAME)
@@ -417,9 +434,6 @@ class mainWindow(QMainWindow):
 		self.DCmode.setEnabled(False)
 		self.StartBtn.setEnabled(False)
 		self.StopBtn.setEnabled(False)
-		#self.LoadBtn.setEnabled(False)
-		self.AnalyBtn.setEnabled(False)
-		self.SaveAnaBtn.setEnabled(False)
 
 		self.SettingData = [0 for i in range(0, 13)]
 		self.LoadPreset()
@@ -464,9 +478,9 @@ class mainWindow(QMainWindow):
 		self.run_index = 0
 
 		#Data_Analysis
-		self.LoadBtn.clicked.connect(lambda:self.LoadData())
-		self.AnalyBtn.clicked.connect(lambda:self.AnalysisData())
-		self.SaveAnaBtn.clicked.connect(lambda:self.SaveAnaData())
+		self.ms.LoadBtn.clicked.connect(lambda:self.LoadData())
+		self.ms.AnalyBtn.clicked.connect(lambda:self.AnalysisData())
+		self.ms.SaveAnaBtn.clicked.connect(lambda:self.SaveAnaData())
 		self.ms.Data_Analysis.Threshold.spin.valueChanged.connect(lambda:self.ShowThreshold())
 		self.ms.Data_Analysis.Noise.spin.valueChanged.connect(lambda:self.NoiseChange())
 		#self.data2 = []
@@ -486,17 +500,14 @@ class mainWindow(QMainWindow):
 
 	def main_UI(self):
 		mainLayout = QGridLayout()
-		mainLayout.addWidget(self.pic,0,0,12,1)
+		mainLayout.addWidget(self.pic,0,0,10,1)
 		mainLayout.addWidget(self.ip.connectBlockWidget(),0,1,1,3)
-		mainLayout.addWidget(self.ms,1,1,6,3)
-		mainLayout.addWidget(self.DCmode,7,1,1,1)
-		mainLayout.addWidget(self.StartBtn,7,2,1,1)
-		mainLayout.addWidget(self.StopBtn,7,3,1,1)
-		mainLayout.addWidget(self.Signal_Read.SubBlockWidget(),8,1,2,3)
-		mainLayout.addWidget(self.LoadBtn,10,1,1,1)
-		mainLayout.addWidget(self.AnalyBtn,10,2,1,1)
-		mainLayout.addWidget(self.SaveAnaBtn,10,3,1,1)
-		mainLayout.addWidget(self.picout,11,1,1,3)
+		mainLayout.addWidget(self.ms,1,1,5,3)
+		mainLayout.addWidget(self.Signal_Read.SubBlockWidget(),6,1,2,3)
+		mainLayout.addWidget(self.DCmode,8,1,1,1)
+		mainLayout.addWidget(self.StartBtn,8,2,1,1)
+		mainLayout.addWidget(self.StopBtn,8,3,1,1)
+		mainLayout.addWidget(self.picout,9,1,1,3)
 		mainLayout.setRowStretch(0, 1)
 		mainLayout.setRowStretch(1, 1)
 		mainLayout.setRowStretch(2, 1)
@@ -507,8 +518,6 @@ class mainWindow(QMainWindow):
 		mainLayout.setRowStretch(7, 1)
 		mainLayout.setRowStretch(8, 1)
 		mainLayout.setRowStretch(9, 1)
-		mainLayout.setRowStretch(10, 1)
-		mainLayout.setRowStretch(11, 1)
 		mainLayout.setColumnStretch(0, 8)
 		mainLayout.setColumnStretch(1, 1)
 		mainLayout.setColumnStretch(2, 1)
@@ -1016,7 +1025,7 @@ class mainWindow(QMainWindow):
 			self.pic.plot2.ax.set_ylabel("Voltage Output (mV)")
 			self.pic.plot2.ax.plot(self.dv2,self.data2, '-')
 			self.pic.plot2.canvas.draw()
-			self.AnalyBtn.setEnabled(True)
+			self.ms.AnalyBtn.setEnabled(True)
 
 	def AnalysisData(self):
 		value1 = float(self.ms.Data_Analysis.Threshold.spin.value())
@@ -1065,8 +1074,8 @@ class mainWindow(QMainWindow):
 			self.pic.plot2.canvas.draw()
 
 		#print self.analist
-		self.AnalyBtn.setEnabled(False)
-		self.SaveAnaBtn.setEnabled(True)
+		self.ms.AnalyBtn.setEnabled(False)
+		self.ms.SaveAnaBtn.setEnabled(True)
 
 	def SaveAnaData(self):
 		SaveFileName = QFileDialog.getSaveFileName(self,"Save Analysis Data",ANALYSIS_FILENAME,"Text Files (*.txt)")
@@ -1082,7 +1091,7 @@ class mainWindow(QMainWindow):
 				fo.write(str("%2.4f" %self.analist[i]))
 			fo.write("\n")
 			fo.close()
-			self.SaveAnaBtn.setEnabled(False)
+			self.ms.SaveAnaBtn.setEnabled(False)
 
 	def ShowThreshold(self):
 		value = float(self.ms.Data_Analysis.Threshold.spin.value())
@@ -1092,10 +1101,10 @@ class mainWindow(QMainWindow):
 		self.pic.plot2.ax.plot(self.dv2, self.data2, '-')
 		self.pic.plot2.ax.axhline(y=value, color='r')
 		self.pic.plot2.canvas.draw()
-		self.AnalyBtn.setEnabled(True)
+		self.ms.AnalyBtn.setEnabled(True)
 
 	def NoiseChange(self):
-		self.AnalyBtn.setEnabled(True)
+		self.ms.AnalyBtn.setEnabled(True)
 		
 
 if __name__ == '__main__':
