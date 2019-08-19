@@ -62,6 +62,7 @@ SETTING_FILENAME = "set/setting.txt"
 READOUT_FILENAME = "Signal_Read_Out.txt"
 ANALYSIS_FILENAME = "Data_Analysis.txt"
 LOGO_FILENAME = "set/logo.png"
+ROW_FILEPATH = "row_data"
 
 I2CDAC_CONV_CONST = 4095.0/5.0
 #CYCLE_CONST = 8.0/1000000.0
@@ -88,7 +89,7 @@ HOST_PORT = 22
 
 TITLE_TEXT = " GRC Ion Mobility Spectrometer "
 VERSION_TEXT = TITLE_TEXT + "\n" + \
-" IonMobilityR V1.07 \n\n" + \
+" IonMobilityR V1.08 \n\n" + \
 " Copyright @ 2019 TAIP \n" + \
 " Maintain by Quantaser Photonics Co. Ltd "
 
@@ -153,13 +154,15 @@ class Signal_Read_Group(QWidget):
 		self.text.setPalette(pe)
 		self.text.setAlignment(Qt.AlignCenter)
 		self.text.setFont(QFont("",16,QFont.Bold))
+		self.checkbox = QCheckBox("Save Row File")
 		self.SaveDataBtn = QPushButton("Save Signal Data")
 		#self.SubBlockWidget()
 		self.SaveDataBtn.setEnabled(False)
 
 	def SubBlockWidget(self):
 		layout = QGridLayout()
-		layout.addWidget(self.text,0,0,3,2)
+		layout.addWidget(self.text,0,0,2,2)
+		layout.addWidget(self.checkbox,0,2,1,1)
 		layout.addWidget(self.SaveDataBtn,1,2,1,1)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
@@ -398,8 +401,8 @@ class msTabSetting(QTabWidget):
 
 	def msTab2UI(self):
 		tablayout = QGridLayout()
-		tablayout.addWidget(self.Data_Sampling.SubBlockWidget(),0,0,1,1)
-		tablayout.addWidget(self.Integrator.SubBlockWidget(),1,0,3,1)
+		tablayout.addWidget(self.Data_Sampling.SubBlockWidget(),0,0,2,1)
+		tablayout.addWidget(self.Integrator.SubBlockWidget(),2,0,3,1)
 		self.msTab2.setLayout(tablayout)
 
 	def msTab3UI(self):
@@ -416,7 +419,7 @@ class mainWindow(QMainWindow):
 	def __init__(self, parent=None):
 		super (mainWindow, self).__init__(parent)
 		self.setWindowTitle(TITLE_TEXT)
-		self.resize(1280,640)
+		self.resize(1280,840)
 		self.move(50,50)
 		self.pic = picTabSetting()
 		self.ms = msTabSetting()
@@ -476,6 +479,7 @@ class mainWindow(QMainWindow):
 		self.dv = np.empty(0)
 		self.alldata = np.empty(0)
 		self.run_index = 0
+		self.row_path = ROW_FILEPATH
 
 		#Data_Analysis
 		self.ms.LoadBtn.clicked.connect(lambda:self.LoadData())
@@ -747,6 +751,7 @@ class mainWindow(QMainWindow):
 		reg_EOI = 0
 		whileHVScanFlag = False
 		whileDCmodeFlag = False
+		row_data = np.empty(0)
 		while (i < loopValue) or (self.HVScanFlag == True) or (self.DCmodeFlag == True):
 			if (self.HVScanFlag):
 				whileHVScanFlag = True
@@ -821,7 +826,11 @@ class mainWindow(QMainWindow):
 				#print i
 
 				if (i >= 0):	# 2019.5.7
+
 					#self.data.append(SR_read)
+					if ( (whileHVScanFlag) and self.Signal_Read.checkbox.isChecked() ):
+						row_data = np.append(row_data, SR_read)
+
 					if ( (whileDCmodeFlag) or (self.run_index == 1)):
 						self.data = np.append(self.data, SR_read)
 					else:
@@ -842,6 +851,15 @@ class mainWindow(QMainWindow):
 
 					#add avg data , 2019.8.19
 					if (whileHVScanFlag):
+						if ( (i >= (loopValue-1)) and self.Signal_Read.checkbox.isChecked() ):
+							if not os.path.isdir(self.row_path):
+								os.mkdir(self.row_path)
+							row_file = str(self.row_path) + "\\" + str(self.run_index) + ".txt"
+							SaveData = [str(line) + '\n' for line in row_data] 
+							fo = open(row_file, "w+")
+							fo.writelines(SaveData)
+							fo.close()
+
 						if (self.run_index == 1):
 							self.alldata = np.append(self.alldata, self.data[i])
 						else:
@@ -864,9 +882,8 @@ class mainWindow(QMainWindow):
 				i = i + 1
 
 				#add loop always , 2019.8.19
-				if (i >= loopValue) and (whileHVScanFlag):
-					#self.data = np.empty(0)
-					#self.dv = np.empty(0)
+				if ( whileHVScanFlag and (i >= loopValue) ):
+					row_data = np.empty(0)
 					self.run_index = self.run_index + 1
 					tmp_str = "run " + str(self.run_index)
 					#print tmp_str
@@ -925,6 +942,10 @@ class mainWindow(QMainWindow):
 		self.data = np.empty(0)
 		self.alldata = np.empty(0)
 		self.run_index = 1
+		if (self.Signal_Read.checkbox.isChecked()):
+			row_path = QFileDialog.getExistingDirectory(self,"Save Row Data","./")
+			if (row_path != ''):
+				self.row_path = row_path
 		gt1 = threading.Thread(target = self.VoltageOut)
 		gt1.start()
 		self.DCmode.setEnabled(False)
@@ -949,7 +970,7 @@ class mainWindow(QMainWindow):
 		self.StartBtn.setEnabled(True)
 		self.StopBtn.setEnabled(False)
 		self.Signal_Read.SaveDataBtn.setEnabled(True)
-		self.AnalyBtn.setEnabled(True)
+		self.ms.AnalyBtn.setEnabled(True)
 
 
 #DC_Voltage
