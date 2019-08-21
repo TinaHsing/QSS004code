@@ -19,8 +19,8 @@ StartVoltage_MAX = 1900
 VoltageStep_MIN = 200
 VoltageStep_MAX = 2000
 
-Loop_MIN = 1
-Loop_MAX = 2000
+Scan_Loop_MIN = 1
+Scan_Loop_MAX = 2000
 
 #TimeDelay_MIN = 0
 #TimeDelay_MAX = 10000
@@ -30,6 +30,9 @@ MV_Numver_MAX = 30000
 
 AVG_time_MIN = 1
 AVG_time_MAX = 100
+
+Run_Loop_MIN = 10
+Run_Loop_MAX = 1000
 
 DAC_Constant_S5 = 6.0/5000.0
 #DAC_Average_Number = 10
@@ -175,7 +178,7 @@ class HVScan_Group(QWidget):
 		self.GroupBox = QGroupBox("High Voltage Scan")
 		self.StartVoltage = spinBlock("Start Voltage (V)", StartVoltage_MIN, StartVoltage_MAX, "", "", False)
 		self.VoltageStep = spinBlock("Voltage Step (mV)", VoltageStep_MIN, VoltageStep_MAX, "", "", False)
-		self.Loop = spinBlock("Loop", Loop_MIN, Loop_MAX, "", "", False)
+		self.Loop = spinBlock("Scan Loop", Scan_Loop_MIN, Scan_Loop_MAX, "", "", False)
 		#self.TimeDelay = spinBlock("Time Delay (ms)", TimeDelay_MIN, TimeDelay_MAX, "", "", False)
 		self.text1 = QLabel("Voltage Out = ")
 		self.text2 = QLabel("0 V")
@@ -197,23 +200,38 @@ class Data_Sampling_Group(QWidget):
 	def __init__(self, parent=None):
 		super(Data_Sampling_Group, self).__init__(parent)
 		self.GroupBox = QGroupBox("Data Sampling")
+
 		self.frame = QGroupBox("Channel")
-		self.radioBtn1 = QRadioButton("CH 0", self.frame)
-		self.radioBtn1.setChecked(True)  # select by default
-		self.radioBtn2 = QRadioButton("CH 1", self.frame)
+		self.chBtn1 = QRadioButton("CH 0", self.frame)
+		self.chBtn1.setChecked(True)  # select by default
+		self.chBtn2 = QRadioButton("CH 1", self.frame)
+
+		self.frame2 = QGroupBox("Polarity")
+		self.poBtn1 = QRadioButton("Positive", self.frame2)
+		self.poBtn1.setChecked(True)  # select by default
+		self.poBtn2 = QRadioButton("Negative", self.frame2)
+
 		self.MV_Number = spinBlock("MV Average Number", MV_Numver_MIN, MV_Numver_MAX, "", "", False)
 		self.AVG_time = spinBlock("Average Times", AVG_time_MIN, AVG_time_MAX, "", "", False)
+		self.Run_Loop = spinBlock("Run Loop", Run_Loop_MIN, Run_Loop_MAX, "", "", False)
 
 	def SubBlockWidget(self):
-		frameLayout = QHBoxLayout()
-		frameLayout.addWidget(self.radioBtn1)
-		frameLayout.addWidget(self.radioBtn2)
-		self.frame.setLayout(frameLayout)
+		frameLayout1 = QHBoxLayout()
+		frameLayout1.addWidget(self.chBtn1)
+		frameLayout1.addWidget(self.chBtn2)
+		self.frame.setLayout(frameLayout1)
+
+		frameLayout2 = QHBoxLayout()
+		frameLayout2.addWidget(self.poBtn1)
+		frameLayout2.addWidget(self.poBtn2)
+		self.frame2.setLayout(frameLayout2)
 
 		layout = QGridLayout()
-		layout.addWidget(self.frame,0,0,1,2)
+		layout.addWidget(self.frame,0,0,1,1)
+		layout.addWidget(self.frame2,0,1,1,1)
 		layout.addWidget(self.MV_Number.spinBlockWidget(),1,0,1,1)
 		layout.addWidget(self.AVG_time.spinBlockWidget(),1,1,1,1)
+		layout.addWidget(self.Run_Loop.spinBlockWidget(),2,0,1,1)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
@@ -400,9 +418,9 @@ class msTabSetting(QTabWidget):
 		self.msTab1.setLayout(tablayout)
 
 	def msTab2UI(self):
-		tablayout = QGridLayout()
-		tablayout.addWidget(self.Data_Sampling.SubBlockWidget(),0,0,2,1)
-		tablayout.addWidget(self.Integrator.SubBlockWidget(),2,0,3,1)
+		tablayout = QVBoxLayout()
+		tablayout.addWidget(self.Data_Sampling.SubBlockWidget())
+		tablayout.addWidget(self.Integrator.SubBlockWidget())
 		self.msTab2.setLayout(tablayout)
 
 	def msTab3UI(self):
@@ -728,7 +746,7 @@ class mainWindow(QMainWindow):
 
 	def VoltageOut(self):
 		#TD_value_float = float(self.HVScan.TimeDelay.spin.value()/1000.0)
-		if self.ms.Data_Sampling.radioBtn2.isChecked():
+		if self.ms.Data_Sampling.chBtn2.isChecked():
 			Channel_str = '1 '
 		else:
 			Channel_str = '0 '
@@ -753,10 +771,14 @@ class mainWindow(QMainWindow):
 		whileDCmodeFlag = False
 		row_data = np.empty(0)
 		while (i < loopValue) or (self.HVScanFlag == True) or (self.DCmodeFlag == True):
+			#tmp_str = "run " + str(self.run_index)
+			#print tmp_str
+
 			if (self.HVScanFlag):
 				whileHVScanFlag = True
 			elif (self.DCmodeFlag):
 				whileDCmodeFlag = True
+
 			if ( (i < loopValue) & (self.HVScanFlag == True) ) or (self.DCmodeFlag == True):
 				if (self.HVScanFlag == True):
 					Vout1 = startValue + stepValue * i
@@ -818,10 +840,11 @@ class mainWindow(QMainWindow):
 						#print "for j " + str(j) + " : " + str(SR_read)
 					SR_read_Total = SR_read_Total + SR_read
 				#print "while i " + str(i) + " : " + str(SR_read_Total)
-				SR_read = SR_read_Total / AVG_time_value * (-1000)
+				#SR_read = SR_read_Total / AVG_time_value * (-1000)
+				SR_read = SR_read_Total / AVG_time_value * float(self.SettingData[10]) * 1000
 
 				#for testing
-				#SR_read = 1000 + self.run_index + i
+				#SR_read = (1000 + self.run_index + i) * float(self.SettingData[10])
 				#print SR_read
 				#print i
 
@@ -885,9 +908,10 @@ class mainWindow(QMainWindow):
 				if ( whileHVScanFlag and (i >= loopValue) ):
 					row_data = np.empty(0)
 					self.run_index = self.run_index + 1
-					tmp_str = "run " + str(self.run_index)
-					#print tmp_str
 					i = 0
+					#add Run_Loop , 2019.8.21
+					if ( self.run_index > self.SettingData[11] ):
+						self.StopScan()
 
 			# elif (self.HVScanFlag == True):
 			# 	#end_time = time.time()*1000
@@ -915,7 +939,7 @@ class mainWindow(QMainWindow):
 		self.SettingData[2] = self.ms.HVScan.VoltageStep.spin.value()
 		self.SettingData[3] = self.ms.HVScan.Loop.spin.value()
 		#self.SettingData[4] = self.HVScan.TimeDelay.spin.value()
-		if self.ms.Data_Sampling.radioBtn2.isChecked():
+		if self.ms.Data_Sampling.chBtn2.isChecked():
 			self.SettingData[4] = 1
 		else:
 			self.SettingData[4] = 0
@@ -927,7 +951,13 @@ class mainWindow(QMainWindow):
 		#self.SettingData[10] = self.ms.Integrator.ResetCycle.spin.value()
 		#self.SettingData[11] = self.ms.Integrator.HoldCycle.spin.value()
 		#self.SettingData[12] = self.ms.Integrator.IntCycle.spin.value()
+		if self.ms.Data_Sampling.poBtn2.isChecked():
+			self.SettingData[10] = -1
+		else:
+			self.SettingData[10] = 1
+		self.SettingData[11] = self.ms.Data_Sampling.Run_Loop.spin.value()
 		#print(self.SettingData)
+
 		SettingData = [str(line) + '\n' for line in self.SettingData] 
 		if not os.path.isdir(SETTING_FILEPATH):
 			os.mkdir(SETTING_FILEPATH)
