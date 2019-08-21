@@ -31,7 +31,7 @@ MV_Numver_MAX = 30000
 AVG_time_MIN = 1
 AVG_time_MAX = 100
 
-Run_Loop_MIN = 10
+Run_Loop_MIN = 1
 Run_Loop_MAX = 1000
 
 DAC_Constant_S5 = 6.0/5000.0
@@ -92,7 +92,7 @@ HOST_PORT = 22
 
 TITLE_TEXT = " GRC Ion Mobility Spectrometer "
 VERSION_TEXT = TITLE_TEXT + "\n" + \
-" IonMobilityR V1.08 \n\n" + \
+" IonMobilityR V1.09 \n\n" + \
 " Copyright @ 2019 TAIP \n" + \
 " Maintain by Quantaser Photonics Co. Ltd "
 
@@ -178,7 +178,7 @@ class HVScan_Group(QWidget):
 		self.GroupBox = QGroupBox("High Voltage Scan")
 		self.StartVoltage = spinBlock("Start Voltage (V)", StartVoltage_MIN, StartVoltage_MAX, "", "", False)
 		self.VoltageStep = spinBlock("Voltage Step (mV)", VoltageStep_MIN, VoltageStep_MAX, "", "", False)
-		self.Loop = spinBlock("Scan Loop", Scan_Loop_MIN, Scan_Loop_MAX, "", "", False)
+		self.Loop = spinBlock("Total Steps", Scan_Loop_MIN, Scan_Loop_MAX, "", "", False)
 		#self.TimeDelay = spinBlock("Time Delay (ms)", TimeDelay_MIN, TimeDelay_MAX, "", "", False)
 		self.text1 = QLabel("Voltage Out = ")
 		self.text2 = QLabel("0 V")
@@ -211,9 +211,9 @@ class Data_Sampling_Group(QWidget):
 		self.poBtn1.setChecked(True)  # select by default
 		self.poBtn2 = QRadioButton("Negative", self.frame2)
 
-		self.MV_Number = spinBlock("MV Average Number", MV_Numver_MIN, MV_Numver_MAX, "", "", False)
+		self.MV_Number = spinBlock("ADC Average Points", MV_Numver_MIN, MV_Numver_MAX, "", "", False)
 		self.AVG_time = spinBlock("Average Times", AVG_time_MIN, AVG_time_MAX, "", "", False)
-		self.Run_Loop = spinBlock("Run Loop", Run_Loop_MIN, Run_Loop_MAX, "", "", False)
+		self.Run_Loop = spinBlock("Scan Accumulate Loops", Run_Loop_MIN, Run_Loop_MAX, "", "", False)
 
 	def SubBlockWidget(self):
 		frameLayout1 = QHBoxLayout()
