@@ -213,7 +213,13 @@ class Data_Sampling_Group(QWidget):
 
 		self.MV_Number = spinBlock("ADC Average Points", MV_Numver_MIN, MV_Numver_MAX, "", "", False)
 		self.AVG_time = spinBlock("Average Times", AVG_time_MIN, AVG_time_MAX, "", "", False)
-		self.Run_Loop = spinBlock("Scan Accumulate Loops", Run_Loop_MIN, Run_Loop_MAX, "", "", False)
+
+		self.frame3 = QGroupBox("Scan Accumulate")
+		self.acBtn1 = QRadioButton("Yes", self.frame3)
+		self.acBtn2 = QRadioButton("No", self.frame3)
+		self.acBtn2.setChecked(True)  # select by default
+
+		self.Run_Loop = spinBlock("Accumulate Loops", Run_Loop_MIN, Run_Loop_MAX, "", "", False)
 
 	def SubBlockWidget(self):
 		frameLayout1 = QHBoxLayout()
@@ -226,12 +232,18 @@ class Data_Sampling_Group(QWidget):
 		frameLayout2.addWidget(self.poBtn2)
 		self.frame2.setLayout(frameLayout2)
 
+		frameLayout3 = QHBoxLayout()
+		frameLayout3.addWidget(self.acBtn1)
+		frameLayout3.addWidget(self.acBtn2)
+		self.frame3.setLayout(frameLayout3)
+
 		layout = QGridLayout()
 		layout.addWidget(self.frame,0,0,1,1)
 		layout.addWidget(self.frame2,0,1,1,1)
 		layout.addWidget(self.MV_Number.spinBlockWidget(),1,0,1,1)
 		layout.addWidget(self.AVG_time.spinBlockWidget(),1,1,1,1)
-		layout.addWidget(self.Run_Loop.spinBlockWidget(),2,0,1,1)
+		layout.addWidget(self.frame3,2,0,1,1)
+		layout.addWidget(self.Run_Loop.spinBlockWidget(),2,1,1,1)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
@@ -870,7 +882,6 @@ class mainWindow(QMainWindow):
 						#self.dv.append(i)
 						self.dv = np.append(self.dv, i)
 					#print(str(i)+","+str(self.HVScanFlag)+","+str(self.DCmodeFlag)+","+str(self.dv[i]))
-					#print self.data[i]
 
 					#add avg data , 2019.8.19
 					if (whileHVScanFlag):
@@ -883,13 +894,15 @@ class mainWindow(QMainWindow):
 							fo.writelines(SaveData)
 							fo.close()
 
-						if (self.run_index == 1):
-							self.alldata = np.append(self.alldata, self.data[i])
-						else:
-							self.alldata[i] = self.alldata[i] + self.data[i]
-							self.data[i] = self.alldata[i] / self.run_index
-						#print self.alldata[i]
-						#print self.data[i]
+						if self.ms.Data_Sampling.acBtn1.isChecked():
+							if (self.run_index == 1):
+								self.alldata = np.append(self.alldata, self.data[i])
+							else:
+								self.alldata[i] = self.alldata[i] + self.data[i]
+								self.data[i] = self.alldata[i] / self.run_index
+							#print self.alldata[i]
+							#print self.data[i]
+							#print "----------"
 
 				self.pic.plot.ax.clear()
 				if (whileHVScanFlag):
