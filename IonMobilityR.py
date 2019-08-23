@@ -182,15 +182,18 @@ class HVScan_Group(QWidget):
 		#self.TimeDelay = spinBlock("Time Delay (ms)", TimeDelay_MIN, TimeDelay_MAX, "", "", False)
 		self.text1 = QLabel("Voltage Out = ")
 		self.text2 = QLabel("0 V")
+		self.reset = QPushButton("Reset")
+		self.reset.setEnabled(False)
 
 	def SubBlockWidget(self):
 		layout = QGridLayout()
 		layout.addWidget(self.StartVoltage.spinBlockWidget(),0,0,1,2)
 		layout.addWidget(self.VoltageStep.spinBlockWidget(),0,2,1,2)
-		layout.addWidget(self.Loop.spinBlockWidget(),1,0,1,2)
+		layout.addWidget(self.Loop.spinBlockWidget(),1,0,2,2)
 		#layout.addWidget(self.TimeDelay.spinBlockWidget())
 		layout.addWidget(self.text1,1,2,1,1)
 		layout.addWidget(self.text2,1,3,1,1)
+		layout.addWidget(self.reset,2,3,1,1)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
@@ -492,6 +495,7 @@ class mainWindow(QMainWindow):
 		self.ms.HVScan.StartVoltage.spin.valueChanged.connect(lambda:self.VoltageChange())
 		self.ms.HVScan.VoltageStep.spin.valueChanged.connect(lambda:self.VoltageChange())
 		self.ms.HVScan.Loop.spin.valueChanged.connect(lambda:self.VoltageChange())
+		self.ms.HVScan.reset.clicked.connect(lambda:self.VoltageReset())
 
 		#DC_Voltage
 		self.ms.DC_Voltage.DC_Voltage1.SetBtn.clicked.connect(lambda:self.SetDC1())
@@ -620,6 +624,7 @@ class mainWindow(QMainWindow):
 			self.DCmode.setEnabled(True)
 			self.StartBtn.setEnabled(True)
 			self.StopBtn.setEnabled(True)
+			self.ms.HVScan.reset.setEnabled(True)
 			self.ms.DC_Voltage.DC_Voltage1.SetBtn.setEnabled(True)
 			self.ms.DC_Voltage.DC_Voltage2.SetBtn.setEnabled(True)
 			self.ms.Fan_Control.Fan_Speed.SetBtn.setEnabled(True)
@@ -696,6 +701,10 @@ class mainWindow(QMainWindow):
 		self.DCmode.setEnabled(False)
 		self.StartBtn.setEnabled(False)
 		self.StopBtn.setEnabled(True)
+		self.ms.HVScan.reset.setEnabled(False)
+		self.ms.DC_Voltage.DC_Voltage1.SetBtn.setEnabled(False)
+		self.ms.DC_Voltage.DC_Voltage2.SetBtn.setEnabled(False)
+		self.ms.Fan_Control.Fan_Speed.SetBtn.setEnabled(False)
 
 #Integrator
 	def IntVoltageChange2(self):
@@ -721,6 +730,13 @@ class mainWindow(QMainWindow):
 			self.ms.Integrator.vText4.setRange(voltage3+1, stopValue-1)
 
 #HVScan
+	def VoltageReset(self):
+		cmd = DAC_SCAN + "0"
+		#print cmd
+		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
+		self.ms.HVScan.text2.setText("0 (V)")
+		self.ms.HVScan.text2.show()
+
 	def VoltageChange(self):
 		startValue = self.ms.HVScan.StartVoltage.spin.value()
 		stepValue = float(self.ms.HVScan.VoltageStep.spin.value())/1000.0
@@ -994,6 +1010,10 @@ class mainWindow(QMainWindow):
 		self.DCmode.setEnabled(False)
 		self.StartBtn.setEnabled(False)
 		self.StopBtn.setEnabled(True)
+		self.ms.HVScan.reset.setEnabled(False)
+		self.ms.DC_Voltage.DC_Voltage1.SetBtn.setEnabled(False)
+		self.ms.DC_Voltage.DC_Voltage2.SetBtn.setEnabled(False)
+		self.ms.Fan_Control.Fan_Speed.SetBtn.setEnabled(False)
 
 
 	def StopScan(self):
@@ -1014,6 +1034,10 @@ class mainWindow(QMainWindow):
 		self.StopBtn.setEnabled(False)
 		self.Signal_Read.SaveDataBtn.setEnabled(True)
 		self.ms.AnalyBtn.setEnabled(True)
+		self.ms.HVScan.reset.setEnabled(True)
+		self.ms.DC_Voltage.DC_Voltage1.SetBtn.setEnabled(True)
+		self.ms.DC_Voltage.DC_Voltage2.SetBtn.setEnabled(True)
+		self.ms.Fan_Control.Fan_Speed.SetBtn.setEnabled(True)
 
 
 #DC_Voltage
