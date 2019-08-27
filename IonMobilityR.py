@@ -51,7 +51,7 @@ Fan_Speed_MAX = 5000
 
 #INT_CYCLE_MIN = 125000
 #INT_CYCLE_MAX = 125000000
-INT_CYCLE_MIN = 1
+INT_CYCLE_MIN = 0.1
 INT_CYCLE_MAX = 10000
 
 Threshold_MIN = -10*1000
@@ -316,10 +316,14 @@ class Integrator_Group(QWidget):
 		self.vText4 = QSpinBox()
 		self.vText5 = QLabel("Stop Voltage")
 		self.gText0 = QLabel("Int Cycle (ms)")
-		self.gValue1 = QSpinBox()
-		self.gValue2 = QSpinBox()
-		self.gValue3 = QSpinBox()
-		self.gValue4 = QSpinBox()
+		self.gValue1 = QDoubleSpinBox()
+		self.gValue2 = QDoubleSpinBox()
+		self.gValue3 = QDoubleSpinBox()
+		self.gValue4 = QDoubleSpinBox()
+		self.gValue1.setDecimals(1)
+		self.gValue2.setDecimals(1)
+		self.gValue3.setDecimals(1)
+		self.gValue4.setDecimals(1)
 		self.gValue1.setRange(INT_CYCLE_MIN, INT_CYCLE_MAX)
 		self.gValue2.setRange(INT_CYCLE_MIN, INT_CYCLE_MAX)
 		self.gValue3.setRange(INT_CYCLE_MIN, INT_CYCLE_MAX)
