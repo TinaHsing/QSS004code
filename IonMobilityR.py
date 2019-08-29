@@ -6,9 +6,9 @@ import threading
 import numpy as np 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
+from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
 import scipy
 from scipy.signal import find_peaks, peak_widths
 
@@ -21,6 +21,9 @@ VoltageStep_MAX = 2000
 
 Scan_Loop_MIN = 1
 Scan_Loop_MAX = 2000
+
+Backward_MIN = 0
+Backward_MAX = 50
 
 #TimeDelay_MIN = 0
 #TimeDelay_MAX = 10000
@@ -92,7 +95,7 @@ HOST_PORT = 22
 
 TITLE_TEXT = " GRC Ion Mobility Spectrometer "
 VERSION_TEXT = TITLE_TEXT + "\n" + \
-" IonMobilityR V1.09 \n\n" + \
+" IonMobilityR V1.10 \n\n" + \
 " Copyright @ 2019 TAIP \n" + \
 " Maintain by Quantaser Photonics Co. Ltd "
 
@@ -179,6 +182,7 @@ class HVScan_Group(QWidget):
 		self.StartVoltage = spinBlock("Start Voltage (V)", StartVoltage_MIN, StartVoltage_MAX, "", "", False)
 		self.VoltageStep = spinBlock("Voltage Step (mV)", VoltageStep_MIN, VoltageStep_MAX, "", "", False)
 		self.Loop = spinBlock("Total Steps", Scan_Loop_MIN, Scan_Loop_MAX, "", "", False)
+		self.Back = spinBlock("Backward points", Backward_MIN, Backward_MAX, "", "", False)
 		#self.TimeDelay = spinBlock("Time Delay (ms)", TimeDelay_MIN, TimeDelay_MAX, "", "", False)
 		self.text1 = QLabel("Voltage Out = ")
 		self.text2 = QLabel("0 V")
@@ -189,10 +193,11 @@ class HVScan_Group(QWidget):
 		layout = QGridLayout()
 		layout.addWidget(self.StartVoltage.spinBlockWidget(),0,0,1,2)
 		layout.addWidget(self.VoltageStep.spinBlockWidget(),0,2,1,2)
-		layout.addWidget(self.Loop.spinBlockWidget(),1,0,2,2)
+		layout.addWidget(self.Loop.spinBlockWidget(),1,0,1,2)
+		layout.addWidget(self.Back.spinBlockWidget(),1,2,1,2)
 		#layout.addWidget(self.TimeDelay.spinBlockWidget())
-		layout.addWidget(self.text1,1,2,1,1)
-		layout.addWidget(self.text2,1,3,1,1)
+		layout.addWidget(self.text1,2,0,1,1)
+		layout.addWidget(self.text2,2,1,1,1)
 		layout.addWidget(self.reset,2,3,1,1)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
@@ -787,7 +792,7 @@ class mainWindow(QMainWindow):
 		Fix_Vol_value = self.ms.DC_Voltage.DC_Voltage1.spin.value()
 		#i = 0	# 2019.5.7
 		if (self.HVScanFlag == True):
-			i = -3
+			i = int(self.SettingData[12]) * (-1)
 		else:
 			i = 0
 		loopValue = self.ms.HVScan.Loop.spin.value()
@@ -941,7 +946,8 @@ class mainWindow(QMainWindow):
 				if ( whileHVScanFlag and (i >= loopValue) ):
 					row_data = np.empty(0)
 					self.run_index = self.run_index + 1
-					i = 0
+					#i = 0
+					i = int(self.SettingData[12]) * (-1)
 					#add Run_Loop , 2019.8.21
 					if ( self.run_index > self.SettingData[11] ):
 						self.StopScan()
@@ -989,6 +995,7 @@ class mainWindow(QMainWindow):
 		else:
 			self.SettingData[10] = 1
 		self.SettingData[11] = self.ms.Data_Sampling.Run_Loop.spin.value()
+		self.SettingData[12] = self.ms.HVScan.Back.spin.value()
 		#print(self.SettingData)
 
 		SettingData = [str(line) + '\n' for line in self.SettingData] 
