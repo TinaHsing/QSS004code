@@ -1,3 +1,7 @@
+IonMobilityR_v1.10
+2019-8-29
+1. add Backward points
+
 IonMobilityR_v1.09
 2019-8-27
 1. add Accumulate
