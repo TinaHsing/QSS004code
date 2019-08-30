@@ -199,10 +199,10 @@ class Data_Sampling_Group(QWidget):
 		# self.chBtn1.setChecked(True)  # select by default
 		# self.chBtn2 = QRadioButton("CH 1", self.frame)
 
-		# self.frame2 = QGroupBox("Polarity")
-		# self.poBtn1 = QRadioButton("Positive", self.frame2)
-		# self.poBtn1.setChecked(True)  # select by default
-		# self.poBtn2 = QRadioButton("Negative", self.frame2)
+		self.frame2 = QGroupBox("Polarity")
+		self.poBtn1 = QRadioButton("Positive", self.frame2)
+		self.poBtn1.setChecked(True)  # select by default
+		self.poBtn2 = QRadioButton("Negative", self.frame2)
 
 		self.MV_Number = spinBlock("ADC Average Points", MV_Numver_MIN, MV_Numver_MAX, "", "", False)
 		self.AVG_time = spinBlock("Average Times", AVG_time_MIN, AVG_time_MAX, "", "", False)
@@ -220,10 +220,10 @@ class Data_Sampling_Group(QWidget):
 		# frameLayout1.addWidget(self.chBtn2)
 		# self.frame.setLayout(frameLayout1)
 
-		# frameLayout2 = QHBoxLayout()
-		# frameLayout2.addWidget(self.poBtn1)
-		# frameLayout2.addWidget(self.poBtn2)
-		# self.frame2.setLayout(frameLayout2)
+		frameLayout2 = QHBoxLayout()
+		frameLayout2.addWidget(self.poBtn1)
+		frameLayout2.addWidget(self.poBtn2)
+		self.frame2.setLayout(frameLayout2)
 
 		frameLayout3 = QHBoxLayout()
 		frameLayout3.addWidget(self.acBtn1)
@@ -237,6 +237,7 @@ class Data_Sampling_Group(QWidget):
 		layout.addWidget(self.AVG_time.spinBlockWidget(),0,1,1,1)
 		layout.addWidget(self.frame3,1,0,1,1)
 		layout.addWidget(self.Run_Loop.spinBlockWidget(),1,1,1,1)
+		layout.addWidget(self.frame2,2,0,1,1)
 		#self.setLayout(layout)
 		self.GroupBox.setLayout(layout)
 		self.GroupBox.show()
@@ -656,7 +657,8 @@ class mainWindow(QMainWindow):
 					SR_read = float(line)
 					SR_read_Total = SR_read_Total + SR_read
 				#print "while i " + str(i) + " : " + str(SR_read_Total)
-				SR_read = SR_read_Total / AVG_time_value / DAC_ratio * 2
+				#SR_read = SR_read_Total / AVG_time_value / DAC_ratio * 2
+				SR_read = SR_read_Total / AVG_time_value / DAC_ratio * 2 * float(self.SettingData[10])
 
 				#for testing
 				#SR_read = (1000 + self.run_index + i) * float(self.SettingData[10])
@@ -761,10 +763,10 @@ class mainWindow(QMainWindow):
 		self.SettingData[7] = self.ms.Fan_Control.Fan_Speed.spin.value()
 		self.SettingData[8] = self.ms.Data_Sampling.MV_Number.spin.value()
 		self.SettingData[9] = self.ms.Data_Sampling.AVG_time.spin.value()
-		# if self.ms.Data_Sampling.poBtn2.isChecked():
-		# 	self.SettingData[10] = -1
-		# else:
-		# 	self.SettingData[10] = 1
+		if self.ms.Data_Sampling.poBtn2.isChecked():
+			self.SettingData[10] = -1
+		else:
+			self.SettingData[10] = 1
 		self.SettingData[11] = self.ms.Data_Sampling.Run_Loop.spin.value()
 		self.SettingData[12] = self.ms.HVScan.Back.spin.value()
 		#print(self.SettingData)
