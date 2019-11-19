@@ -432,7 +432,7 @@ class mainWindow(QMainWindow):
 
 		#Fan_Control
 		self.ms.Fan_Control.Fan_Speed.SetBtn.clicked.connect(lambda:self.SetFanSpeed())
-		self.ms.FanSpeedFlag = False
+		self.FanSpeedFlag = False
 
 		#Signal_Read
 		self.Signal_Read.SaveDataBtn.clicked.connect(lambda:self.SaveData())
@@ -555,7 +555,7 @@ class mainWindow(QMainWindow):
 		Vout1 = startValue
 		Vout2 = float(startValue) * DAC_Constant_S5 * DAC_ratio
 		cmd = DAC_SCAN + str(Vout2)
-		#print cmd
+		print cmd
 		#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 		self.usb.writeBinary(cmd)
 		#line = self.usb.readBinary()
@@ -563,7 +563,7 @@ class mainWindow(QMainWindow):
 		self.ms.HVScan.text2.setText(str(Vout1)+" (V)")
 		self.ms.HVScan.text2.show()
 
-		self.SetCycle()
+		#self.SetCycle()
 
 		self.DCmodeFlag = True
 		gt1 = threading.Thread(target = self.VoltageOut)
@@ -581,9 +581,11 @@ class mainWindow(QMainWindow):
 
 #HVScan
 	def VoltageReset(self):
-		cmd = DAC_SCAN + "0"
+		#cmd = DAC_SCAN + "0"
 		#print cmd
-		stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
+		#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
+		self.usb.writeBinary(DAC_SCAN_STOP)
+		print DAC_SCAN_STOP
 		self.ms.HVScan.text2.setText("0 (V)")
 		self.ms.HVScan.text2.show()
 
@@ -626,7 +628,7 @@ class mainWindow(QMainWindow):
 					Vout1 = startValue + stepValue * i
 					Vout2 = float(Vout1) * DAC_Constant_S5 * DAC_ratio
 					cmd = DAC_SCAN + str(Vout2)
-					#print cmd
+					print cmd
 					#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 					self.usb.writeBinary(cmd)
 					#line = self.usb.readBinary()
@@ -638,7 +640,7 @@ class mainWindow(QMainWindow):
 				#stdin, stdout, stderr = self.ip.ssh.exec_command(ADC_SCAN_READ)
 				#cmd = ADC_SCAN_READ + Channel_str + MV_Number_str + ADC_SCAN_READ_gain
 				cmd = ADC_SCAN_READ + MV_Number_str
-				#print cmd
+				print cmd
 				SR_read_Total = 0.0
 
 				for j in range(0, AVG_time_value):
@@ -810,6 +812,7 @@ class mainWindow(QMainWindow):
 		#print cmd
 		#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 		self.usb.writeBinary(DAC_SCAN_STOP)
+		print DAC_SCAN_STOP
 		#line = self.usb.readBinary()
 		#print line
 		#self.FanSpeedFlag = False
@@ -829,7 +832,7 @@ class mainWindow(QMainWindow):
 		value1 = self.ms.DC_Voltage.DC_Voltage1.spin.value()
 		DC1_value_out = value1 * DAC_Constant_S5 * DAC_ratio
 		cmd = DAC_DC + str(DC1_value_out)
-		#print cmd
+		print cmd
 		#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 		self.usb.writeBinary(cmd)
 		#line = self.usb.readBinary()
@@ -840,7 +843,7 @@ class mainWindow(QMainWindow):
 		value2 = self.ms.DC_Voltage.DC_Voltage2.spin.value()
 		DC2_value_out = value2 * DAC_Constant_S5_ESI * DAC_ratio
 		cmd = DAC_ESI + str(DC2_value_out)
-		#print cmd
+		print cmd
 		#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 		self.usb.writeBinary(cmd)
 		#line = self.usb.readBinary()
@@ -866,7 +869,7 @@ class mainWindow(QMainWindow):
 		value3 = self.ms.Fan_Control.Fan_Speed.spin.value()
 		FS_value = float(value3)/1000.0 * DAC_ratio
 		cmd = DAC_FAN + str(FS_value)
-		#print cmd
+		print cmd
 		#stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
 		self.usb.writeBinary(cmd)
 		#line = self.usb.readBinary()

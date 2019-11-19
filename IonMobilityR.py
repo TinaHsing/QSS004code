@@ -83,10 +83,11 @@ DAC_DC = 		'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 2 '
 DAC_ESI = 		'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 3 '
 DAC_FAN = 		'LD_LIBRARY_PATH=/opt/redpitaya/lib ./DAC 4 '
 
-SCAN_REG_CMD = 		'/opt/redpitaya/bin/monitor 0x40200044 '
 RESET_CYCLE_CMD = 	'/opt/redpitaya/bin/monitor 0x40200048 '
 HOLD_CYCLE_CMD = 	'/opt/redpitaya/bin/monitor 0x4020004C '
 INT_CYCLE_CMD = 	'/opt/redpitaya/bin/monitor 0x40200050 '
+
+SCAN_REG_CMD = 		'/opt/redpitaya/bin/monitor 0x40200044 '
 REG_EOI_CMD = 		'/opt/redpitaya/bin/monitor 0x40200054'
 
 HOST_NAME = "root"
@@ -112,6 +113,7 @@ class spinBlock():
 		self.SetBtn = QPushButton("Set")
 		self.spin.setRange(minValue, maxValue)
 		self.spin.setSingleStep(1)
+
 	def spinBlockWidget(self):
 		adjLayout = QGridLayout()
 		adjLayout.addWidget(self.spin,0,0,1,1)
@@ -859,22 +861,21 @@ class mainWindow(QMainWindow):
 
 				while (reg_EOI == 0):
 					stdin, stdout, stderr = self.ip.ssh.exec_command(REG_EOI_CMD)
-					for line in stdout:
-						#print line
-						reg_EOI = int(line[9])
-						#print 'reg_EOI = ' + str(reg_EOI)
+					output = stdout.readline()
+					reg_EOI = int(output[9])
+					#print 'reg_EOI = ' + str(reg_EOI)
 
 				#time.sleep(TD_value_float)
 				#stdin, stdout, stderr = self.ip.ssh.exec_command(ADC_SCAN_READ)
 				cmd = ADC_SCAN_READ + Channel_str + MV_Number_str + ADC_SCAN_READ_gain
-				#print cmd
+				print cmd
 				SR_read_Total = 0.0
 				for j in range(0, AVG_time_value):
 					SR_read = 0.0
 					stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-					for line in stdout:
-						SR_read = float(line)
-						#print "for j " + str(j) + " : " + str(SR_read)
+					output = stdout.readline()
+					SR_read = float(output)
+					#print "for j " + str(j) + " : " + str(SR_read)
 					SR_read_Total = SR_read_Total + SR_read
 				#print "while i " + str(i) + " : " + str(SR_read_Total)
 				#SR_read = SR_read_Total / AVG_time_value * (-1000)
@@ -961,9 +962,9 @@ class mainWindow(QMainWindow):
 			# 	cmd = ADC_SCAN_READ + MV_Number_str + ADC_SCAN_READ_gain
 			# 	#print cmd
 			# 	stdin, stdout, stderr = self.ip.ssh.exec_command(cmd)
-			# 	for line in stdout:
-			# 		SR_read = float(line)
-			# 		#print SR_read
+			#	output = stdout.readline()
+			#	SR_read = float(output)
+			# 	#print SR_read
 			# 	self.Signal_Read.text.setText(str("%2.4f"%SR_read))
 			# 	self.Signal_Read.text.show()
 			elif (self.HVScanFlag == True):
